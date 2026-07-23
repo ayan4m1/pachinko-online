@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "jsx": "react-jsx",
+    "rootDir": "./",
+    "outDir": "dist",
+    "target": "esnext"
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "index.d.ts"]
+}
