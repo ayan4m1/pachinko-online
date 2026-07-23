@@ -11,6 +11,7 @@ import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import CssMinimizerPlugin from 'css-minimizer-webpack-plugin';
 import { type Configuration, type WebpackPluginInstance } from 'webpack';
 import { CleanWebpackPlugin as CleanPlugin } from 'clean-webpack-plugin';
+import CopyPlugin from 'copy-webpack-plugin';
 
 import 'webpack-dev-server';
 
@@ -24,6 +25,9 @@ const plugins: WebpackPluginInstance[] = [
   new MiniCssExtractPlugin(),
   new CnameWebpackPlugin({
     domain: 'pachinko.andrewdelisa.com'
+  }),
+  new CopyPlugin({
+    patterns: [{ from: './src/assets' }]
   })
 ];
 
@@ -37,9 +41,7 @@ if (dev) {
       quiet: false,
       customSyntax: 'postcss-scss'
     }),
-    new ESLintPlugin({
-      configType: 'flat'
-    })
+    new ESLintPlugin()
   );
 }
 
@@ -54,17 +56,16 @@ const config: Configuration = {
       overlay: {
         warnings: false
       }
-    },
-    headers: {
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-      'Cross-Origin-Opener-Policy': 'same-origin'
     }
   },
   module: {
     rules: [
       {
-        test: /analyzer.js$/,
-        type: 'asset/source'
+        test: /\.gltf$/,
+        type: 'asset/resource',
+        generator: {
+          filename: '[name][ext]'
+        }
       },
       {
         test: /\.tsx?$/,
@@ -110,7 +111,8 @@ const config: Configuration = {
   output: {
     path: resolve(dirname(fileURLToPath(import.meta.url)), 'dist'),
     filename: '[name].js',
-    chunkFilename: '[name].js'
+    chunkFilename: '[name].js',
+    publicPath: '/'
   },
   plugins,
   resolve: {

@@ -16,6 +16,7 @@
     "@fortawesome/react-fontawesome": "3.5.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
+    "@react-three/rapier": "^2.2.0",
     "bootstrap": "^5.3.8",
     "bootswatch": "^5.3.8",
     "classnames": "^2.5.1",
@@ -39,6 +40,7 @@
     "clean-webpack-plugin": "^4.0.0",
     "cli-table": "^0.3.11",
     "cname-webpack-plugin": "^3.0.0",
+    "copy-webpack-plugin": "^14.0.0",
     "cross-env": "^10.1.0",
     "css-loader": "^7.1.4",
     "css-minimizer-webpack-plugin": "^8.0.0",
@@ -76,6 +78,7 @@
     "typescript-eslint": "^8.65.0",
     "webpack": "^5.108.4",
     "webpack-cli": "^7.2.1",
+    "webpack-copy-plugin": "^0.0.4",
     "webpack-dev-server": "^6.0.0"
   },
   "packageManager": "yarn@4.17.1"

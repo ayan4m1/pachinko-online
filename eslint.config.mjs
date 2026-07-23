@@ -22,7 +22,8 @@ export default defineConfig(
     rules: {
       'react/jsx-uses-react': 0,
       'react/jsx-sort-props': 2,
-      'react/react-in-jsx-scope': 0
+      'react/react-in-jsx-scope': 0,
+      'react/no-unknown-property': 0
     },
     settings: {
       react: {

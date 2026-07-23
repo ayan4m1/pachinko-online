@@ -1,5 +1,9 @@
-declare module '*.scss' {
-  const value: string;
+declare module '*.gltf' {
+  const src: string;
+  export default src;
+}
 
-  export default value;
+declare module '*.scss' {
+  const src: string;
+  export default src;
 }
