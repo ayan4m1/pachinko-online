@@ -2,8 +2,8 @@
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "node",
+    "module": "nodenext",
+    "moduleResolution": "node16",
     "jsx": "react-jsx",
     "rootDir": "./",
     "outDir": "dist",
