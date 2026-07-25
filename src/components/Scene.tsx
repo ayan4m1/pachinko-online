@@ -1,5 +1,5 @@
-import { Group } from 'three';
-import { useCallback, useRef } from 'react';
+import { Group, MeshStandardMaterial } from 'three';
+import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import {
   Physics,
@@ -16,14 +16,17 @@ import {
 } from '@react-three/drei';
 
 import boardModel from '../assets/models/board.gltf';
-import { getMaterialUrl, steelMaterial } from '../utils';
+import { getMaterialUrl, ballMaterial, steelMaterial } from '../utils';
 
 export default function Scene() {
   const ballRef = useRef<RapierRigidBody>(null);
-  const wasSpun = useRef(false);
-  const { scene } = useGLTF(boardModel) as { scene: Group };
+  const inited = useRef(false);
+  const { scene, materials } = useGLTF(boardModel) as {
+    scene: Group;
+    materials: Record<string, MeshStandardMaterial>;
+  };
 
-  const props = useTexture(
+  const brushedSteelMat = useTexture(
     Object.fromEntries(
       Object.entries(steelMaterial.textures).map(([key, val]) => [
         key,
@@ -32,44 +35,56 @@ export default function Scene() {
     )
   );
 
-  const applyRandomSpin = useCallback(() => {
-    if (!ballRef.current) {
+  const ballMat = useTexture(
+    Object.fromEntries(
+      Object.entries(ballMaterial.textures).map(([key, val]) => [
+        key,
+        getMaterialUrl(ballMaterial.id, val)
+      ])
+    )
+  );
+
+  /* eslint-disable-next-line react-hooks/immutability */
+  useFrame(() => {
+    if (inited.current || !ballRef.current) {
       return;
     }
 
+    inited.current = true;
+
+    const mat = materials['x1'];
+    /* eslint-disable-next-line react-hooks/immutability */
+    mat.map = brushedSteelMat.map;
+    mat.roughnessMap = brushedSteelMat.roughnessMap;
+    mat.normalMap = brushedSteelMat.normalMap;
+    mat.metalnessMap = brushedSteelMat.metalnessMap;
+    mat.needsUpdate = true;
+
     const strength = 10;
+    const torque = 2;
 
     ballRef.current.applyImpulse(
       {
-        x: (Math.random() - 0.5) * strength,
-        y: 10,
+        x: 0,
+        y: 5,
         z: (Math.random() - 0.5) * strength
       },
       true
     );
     ballRef.current.applyTorqueImpulse(
       {
-        x: (Math.random() - 0.5) * strength,
-        y: (Math.random() - 0.5) * strength,
-        z: (Math.random() - 0.5) * strength
+        x: (Math.random() - 0.5) * torque,
+        y: (Math.random() - 0.5) * torque,
+        z: (Math.random() - 0.5) * torque
       },
       true
     );
-  }, []);
-
-  useFrame(() => {
-    if (wasSpun.current || !ballRef.current) {
-      return;
-    }
-
-    wasSpun.current = true;
-    applyRandomSpin();
   });
 
   return (
     <Physics gravity={[0, -9.6, 0]}>
       <OrbitControls />
-      <Environment preset="dawn" />
+      <Environment preset="apartment" />
       <Center>
         <RigidBody colliders="trimesh" type="fixed">
           <primitive
@@ -91,11 +106,11 @@ export default function Scene() {
         ref={ballRef}
         type="dynamic"
       >
-        <mesh name="ball">
+        <mesh>
           <sphereGeometry args={[0.6, 64, 64]} />
-          <meshPhysicalMaterial {...props} />
+          <meshPhysicalMaterial {...ballMat} />
         </mesh>
-        <BallCollider args={[0.6]} density={2} friction={0.4} />
+        <BallCollider args={[0.6]} friction={0.4} />
       </RigidBody>
     </Physics>
   );

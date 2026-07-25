@@ -1,7 +1,17 @@
 import { Material } from '../types';
 
-export const steelMaterial: Material = {
+export const ballMaterial: Material = {
   id: 'Metal063',
+  textures: {
+    map: 'Color',
+    metalnessMap: 'Metalness',
+    normalMap: 'NormalGL',
+    roughnessMap: 'Roughness'
+  }
+};
+
+export const steelMaterial: Material = {
+  id: 'Metal009',
   textures: {
     map: 'Color',
     metalnessMap: 'Metalness',
