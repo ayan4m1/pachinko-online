@@ -1,30 +1,36 @@
 import { Group } from 'three';
 import { useCallback, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import {
   Physics,
   RigidBody,
   RapierRigidBody,
   BallCollider
 } from '@react-three/rapier';
-import { Center, Environment, OrbitControls, useGLTF } from '@react-three/drei';
+import {
+  Center,
+  Environment,
+  OrbitControls,
+  useGLTF,
+  useTexture
+} from '@react-three/drei';
 
 import boardModel from '../assets/models/board.gltf';
-// import { getMaterialUrl, steelMaterial } from '../utils';
-import { useFrame } from '@react-three/fiber';
+import { getMaterialUrl, steelMaterial } from '../utils';
 
 export default function Scene() {
   const ballRef = useRef<RapierRigidBody>(null);
   const wasSpun = useRef(false);
   const { scene } = useGLTF(boardModel) as { scene: Group };
 
-  // const props = useTexture(
-  //   Object.fromEntries(
-  //     Object.entries(steelMaterial.textures).map(([key, val]) => [
-  //       key,
-  //       getMaterialUrl(steelMaterial.id, val)
-  //     ])
-  //   )
-  // );
+  const props = useTexture(
+    Object.fromEntries(
+      Object.entries(steelMaterial.textures).map(([key, val]) => [
+        key,
+        getMaterialUrl(steelMaterial.id, val)
+      ])
+    )
+  );
 
   const applyRandomSpin = useCallback(() => {
     if (!ballRef.current) {
@@ -72,7 +78,7 @@ export default function Scene() {
             scale={0.2}
           />
         </RigidBody>
-        <RigidBody position={[3, -12, -8.5]} type="fixed">
+        <RigidBody colliders="cuboid" position={[2.5, -12, -8.5]} type="fixed">
           <mesh>
             <boxGeometry args={[1, 24, 15]} />
             <meshPhysicalMaterial color="blue" opacity={0.4} transparent />
@@ -86,11 +92,10 @@ export default function Scene() {
         type="dynamic"
       >
         <mesh name="ball">
-          <sphereGeometry args={[0.75, 64, 64]} />
-          {/* <meshPhysicalMaterial {...props} /> */}
-          <meshStandardMaterial color="red" />
+          <sphereGeometry args={[0.6, 64, 64]} />
+          <meshPhysicalMaterial {...props} />
         </mesh>
-        <BallCollider args={[0.75]} density={2} friction={0.4} />
+        <BallCollider args={[0.6]} density={2} friction={0.4} />
       </RigidBody>
     </Physics>
   );

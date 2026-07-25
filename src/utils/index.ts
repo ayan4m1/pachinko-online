@@ -4,7 +4,6 @@ export const steelMaterial: Material = {
   id: 'Metal063',
   textures: {
     map: 'Color',
-    displacementMap: 'Displacement',
     metalnessMap: 'Metalness',
     normalMap: 'NormalGL',
     roughnessMap: 'Roughness'
