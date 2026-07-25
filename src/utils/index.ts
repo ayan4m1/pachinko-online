@@ -14,7 +14,7 @@ export const steelMaterial: Material = {
 export const getMaterialUrl = (
   id: string,
   type: string,
-  resolution = '4K',
+  resolution = '1K',
   format = 'jpg'
 ) =>
   `./textures/${id}_${resolution}-${format.toLocaleUpperCase()}_${type}.${format}`;
