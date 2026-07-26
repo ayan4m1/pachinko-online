@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import {
   Physics,
@@ -6,29 +6,30 @@ import {
   BallCollider,
   RigidBody
 } from '@react-three/rapier';
-import {
-  Center,
-  Environment,
-  OrbitControls,
-  useTexture
-} from '@react-three/drei';
+import { Center, Environment, OrbitControls } from '@react-three/drei';
 
-import { getMaterialUrl, ballMaterial, boardShape } from '../utils';
+import { ballMaterial, boardShape, steelMaterial } from '../utils';
 import CadModel from './CadModel';
+import useMaterial from '../hooks/useMaterial';
+import { MeshPhysicalMaterial } from 'three';
 
 export default function Scene() {
   const ballRef = useRef<RapierRigidBody>(null);
   const inited = useRef(false);
-  const ballMat = useTexture(
-    Object.fromEntries(
-      Object.entries(ballMaterial.textures).map(([key, val]) => [
-        key,
-        getMaterialUrl(ballMaterial.id, val)
-      ])
-    )
+
+  const steelMat = useMaterial(steelMaterial);
+  const ballMat = useMaterial(ballMaterial);
+
+  console.dir(steelMat);
+
+  const steel = useMemo(
+    () =>
+      new MeshPhysicalMaterial({
+        ...steelMat
+      }),
+    [steelMat]
   );
 
-  /* eslint-disable-next-line react-hooks/immutability */
   useFrame(() => {
     if (inited.current || !ballRef.current) {
       return;
@@ -62,7 +63,7 @@ export default function Scene() {
       <OrbitControls />
       <Environment preset="apartment" />
       <Center>
-        <CadModel shape={boardShape} />
+        <CadModel material={steel} shape={boardShape} />
         <RigidBody colliders="cuboid" position={[2.5, 12, 8]} type="fixed">
           <mesh>
             <boxGeometry args={[1, 24, 15]} />

@@ -3,6 +3,7 @@ import { Vec3 } from '@jscad/modeling/src/maths/vec3';
 import { Geom3 } from '@jscad/modeling/src/geometries/types';
 
 import { Material } from '../types';
+import { BufferAttribute, BufferGeometry, Vector3 } from 'three';
 
 /* eslint-disable-next-line import-x/no-named-as-default-member */
 const { primitives, transforms, booleans } = modeling;
@@ -37,6 +38,74 @@ export const getMaterialUrl = (
   format = 'jpg'
 ) =>
   `./textures/${id}_${resolution}-${format.toLocaleUpperCase()}_${type}.${format}`;
+
+/**
+ * Generates box-mapped (per-face planar) UVs for a non-indexed geometry.
+ *
+ * Each triangle is projected onto the axis plane that its face normal is most
+ * aligned with, so the flat faces of the board and the sides of the pins each
+ * receive an undistorted projection. UVs are normalized to the geometry's
+ * bounding box so the texture scale is consistent across faces.
+ */
+export const computeBoxUVs = (geometry: BufferGeometry) => {
+  geometry.computeBoundingBox();
+  const bbox = geometry.boundingBox!;
+  const size = new Vector3();
+  bbox.getSize(size);
+
+  const pos = geometry.attributes.position;
+  const uv = new Float32Array(pos.count * 2);
+
+  const a = new Vector3();
+  const b = new Vector3();
+  const c = new Vector3();
+  const ab = new Vector3();
+  const ac = new Vector3();
+  const normal = new Vector3();
+
+  // STL geometry is non-indexed: every 3 vertices form one triangle.
+  for (let i = 0; i < pos.count; i += 3) {
+    a.fromBufferAttribute(pos, i);
+    b.fromBufferAttribute(pos, i + 1);
+    c.fromBufferAttribute(pos, i + 2);
+
+    ab.subVectors(b, a);
+    ac.subVectors(c, a);
+    normal.crossVectors(ab, ac);
+
+    const nx = Math.abs(normal.x);
+    const ny = Math.abs(normal.y);
+    const nz = Math.abs(normal.z);
+
+    for (let j = 0; j < 3; j++) {
+      const idx = i + j;
+      const px = pos.getX(idx);
+      const py = pos.getY(idx);
+      const pz = pos.getZ(idx);
+
+      let u: number;
+      let v: number;
+      if (nx >= ny && nx >= nz) {
+        // X-dominant face: project onto the YZ plane.
+        u = (pz - bbox.min.z) / size.z;
+        v = (py - bbox.min.y) / size.y;
+      } else if (ny >= nx && ny >= nz) {
+        // Y-dominant face: project onto the XZ plane.
+        u = (px - bbox.min.x) / size.x;
+        v = (pz - bbox.min.z) / size.z;
+      } else {
+        // Z-dominant face: project onto the XY plane.
+        u = (px - bbox.min.x) / size.x;
+        v = (py - bbox.min.y) / size.y;
+      }
+
+      uv[idx * 2] = u;
+      uv[idx * 2 + 1] = v;
+    }
+  }
+
+  geometry.setAttribute('uv', new BufferAttribute(uv, 2));
+};
 
 const backboardSize = [120, 80, 4];
 const pinSize = [3, 8]; // diameter must be an integer
