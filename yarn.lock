@@ -668,6 +668,30 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@jscad/array-utils@npm:2.1.4":
+  version: 2.1.4
+  resolution: "@jscad/array-utils@npm:2.1.4"
+  checksum: 10c0/8b96114e2497aa2846e149d1062710c590cdc45a40768e3576381e7e9fb04c1eba3f4757089c9ccfba02b6b45c651e8e300d33f174db7dc3d4f5604f1d5efaaa
+  languageName: node
+  linkType: hard
+
+"@jscad/modeling@npm:2.13.0, @jscad/modeling@npm:^2.13.0":
+  version: 2.13.0
+  resolution: "@jscad/modeling@npm:2.13.0"
+  checksum: 10c0/f45ea30a5b6297d45f28eb269caf8739c99a003fc5f9d20734b75b2f34df68cf05566fdf74817ed3f0ba8625f3c6c1c4452fc99867bef6373041c9807361a5a8
+  languageName: node
+  linkType: hard
+
+"@jscad/stl-serializer@npm:^2.1.23":
+  version: 2.1.23
+  resolution: "@jscad/stl-serializer@npm:2.1.23"
+  dependencies:
+    "@jscad/array-utils": "npm:2.1.4"
+    "@jscad/modeling": "npm:2.13.0"
+  checksum: 10c0/702a0962d0888b1b45512568b312cc46f02763055ef3e0c9cfe5c8ee691076547f20e4508d4ab4eb39daca65da9066473712b76d7e93668f6c0150cba84ea69a
+  languageName: node
+  linkType: hard
+
 "@jsonjoy.com/base64@npm:17.67.0":
   version: 17.67.0
   resolution: "@jsonjoy.com/base64@npm:17.67.0"
@@ -6903,6 +6927,8 @@ __metadata:
     "@fortawesome/fontawesome-svg-core": "npm:^7.3.1"
     "@fortawesome/free-solid-svg-icons": "npm:^7.3.1"
     "@fortawesome/react-fontawesome": "npm:3.5.0"
+    "@jscad/modeling": "npm:^2.13.0"
+    "@jscad/stl-serializer": "npm:^2.1.23"
     "@react-three/drei": "npm:^10.7.7"
     "@react-three/fiber": "npm:^9.6.1"
     "@react-three/rapier": "npm:^2.2.0"

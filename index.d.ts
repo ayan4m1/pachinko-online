@@ -7,3 +7,5 @@ declare module '*.scss' {
   const src: string;
   export default src;
 }
+
+declare module '@jscad/stl-serializer';
