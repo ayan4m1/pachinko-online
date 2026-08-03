@@ -1415,6 +1415,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@react-three/postprocessing@npm:^3.0.4":
+  version: 3.0.4
+  resolution: "@react-three/postprocessing@npm:3.0.4"
+  dependencies:
+    maath: "npm:^0.6.0"
+    n8ao: "npm:^1.9.4"
+    postprocessing: "npm:^6.36.6"
+  peerDependencies:
+    "@react-three/fiber": ^9.0.0
+    react: ^19.0
+    three: ">= 0.156.0"
+  checksum: 10c0/7a9f6af37da29af6844bd8ad781ceafa2c2cee29954ccf6c41633b2afd4cf7da41eb668a62b3a942a35e400ac8c7685800394a96eed95dde9ec582decfdade5b
+  languageName: node
+  linkType: hard
+
 "@react-three/rapier@npm:^2.2.0":
   version: 2.2.0
   resolution: "@react-three/rapier@npm:2.2.0"
@@ -1796,6 +1811,13 @@ __metadata:
   dependencies:
     csstype: "npm:^3.2.2"
   checksum: 10c0/bc2c4af96b3e480604424de70d5ebda90c5f4b485df471858c0bc2d7d70364b606ec3c4d8579f94f01aa0c6c0591f56bcf14cba5689f5eea4b74250ccdc3a232
+  languageName: node
+  linkType: hard
+
+"@types/seedrandom@npm:^3":
+  version: 3.0.8
+  resolution: "@types/seedrandom@npm:3.0.8"
+  checksum: 10c0/6efdf3df34cd447ee235794946097c73b3d595a43d3afcf8a7edf08bf1111e32372f77edfe37478ba857d1d712361aff7022a5043c98a816dceb11a0e30e251c
   languageName: node
   linkType: hard
 
@@ -6316,6 +6338,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"maath@npm:^0.6.0":
+  version: 0.6.0
+  resolution: "maath@npm:0.6.0"
+  peerDependencies:
+    "@types/three": ">=0.144.0"
+    three: ">=0.144.0"
+  checksum: 10c0/a9b716841d225338339fbe776c94e99f98136f24360e34c06698e2f1658bffc9b09321d2463e730810940de9801b73154de9afa6647595ae1d7b7662f4da6ef6
+  languageName: node
+  linkType: hard
+
 "make-error@npm:^1.1.1":
   version: 1.3.6
   resolution: "make-error@npm:1.3.6"
@@ -6583,6 +6615,16 @@ __metadata:
   bin:
     multicast-dns: cli.js
   checksum: 10c0/5120171d4bdb1577764c5afa96e413353bff530d1b37081cb29cccc747f989eb1baf40574fe8e27060fc1aef72b59c042f72b9b208413de33bcf411343c69057
+  languageName: node
+  linkType: hard
+
+"n8ao@npm:^1.9.4":
+  version: 1.10.3
+  resolution: "n8ao@npm:1.10.3"
+  peerDependencies:
+    postprocessing: ">=6.30.0"
+    three: ">=0.137"
+  checksum: 10c0/2bc0c71540406953a237302729e81e9cd3d38db38231b395d38b1c34bb32be711212c67d3b0213cff414f9c12f21f4e8d71a5bee94b6cb9934c7b8f3ef58f397
   languageName: node
   linkType: hard
 
@@ -6931,11 +6973,13 @@ __metadata:
     "@jscad/stl-serializer": "npm:^2.1.23"
     "@react-three/drei": "npm:^10.7.7"
     "@react-three/fiber": "npm:^9.6.1"
+    "@react-three/postprocessing": "npm:^3.0.4"
     "@react-three/rapier": "npm:^2.2.0"
     "@types/cli-table": "npm:^0"
     "@types/node": "npm:24.10.7"
     "@types/react": "npm:^19.2.17"
     "@types/react-dom": "npm:^19.2.3"
+    "@types/seedrandom": "npm:^3"
     "@types/three": "npm:^0.185.1"
     "@types/webpack": "npm:^5.28.5"
     autoprefixer: "npm:^10.5.4"
@@ -6978,6 +7022,7 @@ __metadata:
     reselect: "npm:^5.2.0"
     sass: "npm:^1.101.6"
     sass-loader: "npm:^17.0.0"
+    seedrandom: "npm:^3.0.5"
     style-loader: "npm:^4.0.0"
     stylelint: "npm:^17.14.1"
     stylelint-config-recommended: "npm:^18.0.0"
@@ -7607,6 +7652,15 @@ __metadata:
     picocolors: "npm:^1.1.1"
     source-map-js: "npm:^1.2.1"
   checksum: 10c0/9e143ee457988049d5f187116fd37f2750ae9d8d71cc99eae690b776e549e134b34086cbaa2f0360ecd1729b15d918227bd0fc3a2ffbe341f7212d0827080793
+  languageName: node
+  linkType: hard
+
+"postprocessing@npm:^6.36.6":
+  version: 6.39.3
+  resolution: "postprocessing@npm:6.39.3"
+  peerDependencies:
+    three: ">= 0.168.0 < 0.186.0"
+  checksum: 10c0/e2fb2ea0198d15a489826c4bb9c7abd01ff7d652f35cdf29259e743af29739966bb183addee318f00c5e3996aabef42fe13a0708aa29530485a19f4f3abb2099
   languageName: node
   linkType: hard
 
@@ -8258,6 +8312,13 @@ __metadata:
     ajv-formats: "npm:^2.1.1"
     ajv-keywords: "npm:^5.1.0"
   checksum: 10c0/1c8d2c480a026d7c02ab2ecbe5919133a096d6a721a3f201fa50663e4f30f6d6ba020dfddd93cb828b66b922e76b342e103edd19a62c95c8f60e9079cc403202
+  languageName: node
+  linkType: hard
+
+"seedrandom@npm:^3.0.5":
+  version: 3.0.5
+  resolution: "seedrandom@npm:3.0.5"
+  checksum: 10c0/929752ac098ff4990b3f8e0ac39136534916e72879d6eb625230141d20db26e2f44c4d03d153d457682e8cbaab0fb7d58a1e7267a157cf23fd8cf34e25044e88
   languageName: node
   linkType: hard
 
