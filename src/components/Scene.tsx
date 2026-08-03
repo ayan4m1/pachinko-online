@@ -1,4 +1,5 @@
-import { useMemo, useRef } from 'react';
+import { Fragment, useMemo, useRef } from 'react';
+import { MeshToonMaterial } from 'three';
 import { useFrame } from '@react-three/fiber';
 import {
   Physics,
@@ -6,28 +7,30 @@ import {
   BallCollider,
   RigidBody
 } from '@react-three/rapier';
-import { Center, Environment, OrbitControls } from '@react-three/drei';
+import { Center, OrbitControls } from '@react-three/drei';
 
-import { ballMaterial, boardShape, steelMaterial } from '../utils';
 import CadModel from './CadModel';
 import useMaterial from '../hooks/useMaterial';
-import { MeshPhysicalMaterial } from 'three';
+import { ballMaterial, boardShape, createThreeToneTexture } from '../utils';
 
-export default function Scene() {
-  const ballRef = useRef<RapierRigidBody>(null);
+interface IProps {
+  seed: string;
+  paused?: boolean;
+}
+
+export default function Scene({ seed, paused = false }: IProps) {
+  const ballRef = useRef<RapierRigidBody | null>(null);
   const inited = useRef(false);
-
-  const steelMat = useMaterial(steelMaterial);
   const ballMat = useMaterial(ballMaterial);
 
-  console.dir(steelMat);
-
+  const toonGradient = createThreeToneTexture('#3d3764', '#93a5cb', '#ffffff');
   const steel = useMemo(
     () =>
-      new MeshPhysicalMaterial({
-        ...steelMat
+      new MeshToonMaterial({
+        color: 0x7a7f80, // #7a7f80
+        gradientMap: toonGradient
       }),
-    [steelMat]
+    [toonGradient]
   );
 
   useFrame(() => {
@@ -59,30 +62,46 @@ export default function Scene() {
   });
 
   return (
-    <Physics gravity={[0, -9.6, 0]}>
-      <OrbitControls />
-      <Environment preset="apartment" />
-      <Center>
-        <CadModel material={steel} shape={boardShape} />
-        <RigidBody colliders="cuboid" position={[2.5, 12, 8]} type="fixed">
-          <mesh>
-            <boxGeometry args={[1, 24, 15]} />
-            <meshPhysicalMaterial color="blue" opacity={0.4} transparent />
-          </mesh>
-        </RigidBody>
-      </Center>
-      <RigidBody
-        colliders={false}
-        position={[-1, 20, 0]}
-        ref={ballRef}
-        type="dynamic"
-      >
-        <mesh>
-          <sphereGeometry args={[0.6, 64, 64]} />
-          <meshPhysicalMaterial {...ballMat} />
+    <Fragment>
+      <Physics gravity={[0, -26, 0]} paused={paused}>
+        <OrbitControls />
+        <ambientLight color="white" />
+        <directionalLight castShadow intensity={10} position={[5, 16, 12]} />
+        <mesh position={[5, 16, 12]}>
+          <sphereGeometry args={[1, 32, 32]} />
+          <meshStandardMaterial color="orange" />
         </mesh>
-        <BallCollider args={[0.6]} friction={0.4} />
-      </RigidBody>
-    </Physics>
+        <Center>
+          <CadModel
+            colliders="trimesh"
+            material={steel}
+            outline
+            physicsType="fixed"
+            rotation={[Math.PI / 2, Math.PI / 2, 0]}
+            scale={0.2}
+            seed={seed}
+            shape={boardShape}
+          />
+          <RigidBody colliders="cuboid" position={[2.5, 12, 8]} type="fixed">
+            <mesh>
+              <boxGeometry args={[1, 24, 15]} />
+              <meshPhysicalMaterial color="blue" opacity={0.4} transparent />
+            </mesh>
+          </RigidBody>
+        </Center>
+        <RigidBody
+          colliders={false}
+          position={[-1, 20, 0]}
+          ref={ballRef}
+          type="dynamic"
+        >
+          <mesh castShadow receiveShadow>
+            <sphereGeometry args={[0.6, 64, 64]} />
+            <meshPhysicalMaterial {...ballMat} />
+          </mesh>
+          <BallCollider args={[0.6]} friction={0.4} />
+        </RigidBody>
+      </Physics>
+    </Fragment>
   );
 }

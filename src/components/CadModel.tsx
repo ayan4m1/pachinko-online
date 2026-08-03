@@ -1,23 +1,40 @@
 import { useEffect, useState } from 'react';
-import { RigidBody } from '@react-three/rapier';
+import {
+  RigidBody,
+  RigidBodyAutoCollider,
+  RigidBodyTypeString
+} from '@react-three/rapier';
+import { Edges, Outlines } from '@react-three/drei';
 import { BufferGeometry, Material } from 'three';
 import stlSerializer from '@jscad/stl-serializer';
+import { ThreeElements } from '@react-three/fiber';
 import { Geom3 } from '@jscad/modeling/src/geometries/types';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 
 import { computeBoxUVs } from '../utils';
 
-interface IProps {
-  shape: () => Geom3;
+type IProps = {
+  colliders?: RigidBodyAutoCollider;
+  shape: (seed: string) => Geom3;
+  seed: string;
   material: Material;
-}
+  outline?: boolean;
+  physicsType?: RigidBodyTypeString;
+} & ThreeElements['mesh'];
 
-export default function CadModel({ shape, material }: IProps) {
+export default function CadModel({
+  colliders = false,
+  shape,
+  seed,
+  material,
+  outline = false,
+  physicsType = 'dynamic',
+  ...props
+}: IProps) {
   const [geometry, setGeometry] = useState<BufferGeometry | null>(null);
 
   useEffect(() => {
-    const geometry = shape();
-
+    const geometry = shape(seed);
     const rawData = stlSerializer.serialize({ binary: true }, geometry);
     const blob = new Blob(rawData);
 
@@ -30,20 +47,18 @@ export default function CadModel({ shape, material }: IProps) {
 
       setGeometry(parsed);
     });
-  }, [shape]);
+  }, [shape, seed, outline]);
 
   if (!geometry) {
     return null;
   }
 
   return (
-    <RigidBody colliders="trimesh" type="fixed">
-      <mesh
-        geometry={geometry}
-        material={material}
-        rotation={[Math.PI / 2, Math.PI / 2, 0]}
-        scale={0.2}
-      />
+    <RigidBody colliders={colliders} type={physicsType}>
+      <mesh geometry={geometry} material={material} {...props}>
+        <Outlines angle={0.05} color={0x262323} thickness={4} />
+        <Edges color={0x262323} lineWidth={2} threshold={15} />
+      </mesh>
     </RigidBody>
   );
 }

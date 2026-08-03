@@ -1,13 +1,22 @@
+import seedrandom from 'seedrandom';
 import modeling from '@jscad/modeling';
 import { Vec3 } from '@jscad/modeling/src/maths/vec3';
 import { Geom3 } from '@jscad/modeling/src/geometries/types';
 
 import { Material } from '../types';
-import { BufferAttribute, BufferGeometry, Vector3 } from 'three';
+import {
+  BufferAttribute,
+  BufferGeometry,
+  Color,
+  DataTexture,
+  NearestFilter,
+  RGBFormat,
+  Vector3
+} from 'three';
 
 /* eslint-disable-next-line import-x/no-named-as-default-member */
 const { primitives, transforms, booleans } = modeling;
-const { cuboid, cylinder, roundedCuboid } = primitives;
+const { cuboid, roundedCuboid, roundedCylinder } = primitives;
 const { intersect, union } = booleans;
 const { translate } = transforms;
 
@@ -107,10 +116,42 @@ export const computeBoxUVs = (geometry: BufferGeometry) => {
   geometry.setAttribute('uv', new BufferAttribute(uv, 2));
 };
 
+export function createThreeToneTexture(
+  shadowHex: string,
+  midHex: string,
+  highlightHex: string
+) {
+  // Define colors
+  const shadow = new Color(shadowHex);
+  const mid = new Color(midHex);
+  const highlight = new Color(highlightHex);
+
+  // Create a 3-pixel 1D array (RGB format)
+  const data = new Uint8Array([
+    Math.floor(shadow.r * 255),
+    Math.floor(shadow.g * 255),
+    Math.floor(shadow.b * 255),
+    Math.floor(mid.r * 255),
+    Math.floor(mid.g * 255),
+    Math.floor(mid.b * 255),
+    Math.floor(highlight.r * 255),
+    Math.floor(highlight.g * 255),
+    Math.floor(highlight.b * 255)
+  ]);
+
+  const texture = new DataTexture(data, 3, 1, RGBFormat);
+
+  texture.minFilter = NearestFilter;
+  texture.magFilter = NearestFilter;
+  texture.needsUpdate = true;
+  return texture;
+}
+
 const backboardSize = [120, 80, 4];
 const pinSize = [3, 8]; // diameter must be an integer
 const pinCount = 32;
 const ballDiameter = 6;
+const pinRoundRadius = 0.2;
 
 const backBoard = () =>
   translate(
@@ -133,10 +174,11 @@ const backBoard = () =>
   );
 
 const pin = () =>
-  cylinder({
+  roundedCylinder({
     radius: pinSize[0] / 2,
     height: pinSize[1],
-    center: [pinSize[0] / 2, pinSize[0] / 2, pinSize[1] / 2]
+    center: [pinSize[0] / 2, pinSize[0] / 2, pinSize[1] / 2],
+    roundRadius: pinRoundRadius
   });
 
 const topHalf = (size: Vec3, geometry: Geom3) =>
@@ -188,4 +230,7 @@ const pins = () => {
   );
 };
 
-export const boardShape = () => union(backBoard(), pins());
+export const boardShape = (seed: string) => {
+  seedrandom(seed, { global: true });
+  return union(backBoard(), pins());
+};
