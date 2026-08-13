@@ -1,5 +1,5 @@
-import { Fragment, useMemo, useRef } from 'react';
-import { MeshToonMaterial } from 'three';
+import { useMemo, useRef } from 'react';
+import { MeshToonMaterial, Object3D } from 'three';
 import { useFrame } from '@react-three/fiber';
 import {
   Physics,
@@ -7,18 +7,31 @@ import {
   BallCollider,
   RigidBody
 } from '@react-three/rapier';
-import { Center, OrbitControls } from '@react-three/drei';
+import { Center, OrbitControls, OrthographicCamera } from '@react-three/drei';
 
 import CadModel from './CadModel';
 import useMaterial from '../hooks/useMaterial';
-import { ballMaterial, boardShape, createThreeToneTexture } from '../utils';
+import {
+  ballMaterial,
+  boardShape,
+  boardWidth,
+  createThreeToneTexture
+} from '../utils';
 
 interface IProps {
+  clearReset: () => void;
   seed: string;
+  needsReset?: boolean;
   paused?: boolean;
 }
 
-export default function Scene({ seed, paused = false }: IProps) {
+export default function Scene({
+  clearReset,
+  seed,
+  needsReset = false,
+  paused = false
+}: IProps) {
+  const ballObjRef = useRef<Object3D | null>(null);
   const ballRef = useRef<RapierRigidBody | null>(null);
   const inited = useRef(false);
   const ballMat = useMaterial(ballMaterial);
@@ -34,6 +47,11 @@ export default function Scene({ seed, paused = false }: IProps) {
   );
 
   useFrame(() => {
+    if (ballObjRef.current?.parent && ballRef.current && needsReset) {
+      ballRef.current.setTranslation({ x: -1, y: 20, z: 0 }, true);
+      clearReset?.();
+    }
+
     if (inited.current || !ballRef.current) {
       return;
     }
@@ -62,46 +80,45 @@ export default function Scene({ seed, paused = false }: IProps) {
   });
 
   return (
-    <Fragment>
-      <Physics gravity={[0, -26, 0]} paused={paused}>
-        <OrbitControls />
-        <ambientLight color="white" />
-        <directionalLight castShadow intensity={10} position={[5, 16, 12]} />
-        <mesh position={[5, 16, 12]}>
-          <sphereGeometry args={[1, 32, 32]} />
-          <meshStandardMaterial color="orange" />
-        </mesh>
-        <Center>
-          <CadModel
-            colliders="trimesh"
-            material={steel}
-            outline
-            physicsType="fixed"
-            rotation={[Math.PI / 2, Math.PI / 2, 0]}
-            scale={0.2}
-            seed={seed}
-            shape={boardShape}
-          />
-          <RigidBody colliders="cuboid" position={[2.5, 12, 8]} type="fixed">
-            <mesh>
-              <boxGeometry args={[1, 24, 15]} />
-              <meshPhysicalMaterial color="blue" opacity={0.4} transparent />
-            </mesh>
-          </RigidBody>
-        </Center>
-        <RigidBody
-          colliders={false}
-          position={[-1, 20, 0]}
-          ref={ballRef}
-          type="dynamic"
-        >
-          <mesh castShadow receiveShadow>
-            <sphereGeometry args={[0.6, 64, 64]} />
-            <meshPhysicalMaterial {...ballMat} />
+    <Physics gravity={[0, -26, 0]} paused={paused}>
+      <OrthographicCamera makeDefault position={[20, 0, 0]} zoom={25} />
+      <OrbitControls />
+      <ambientLight color="white" />
+      <directionalLight castShadow intensity={10} position={[5, 16, 12]} />
+      <mesh position={[5, 16, 12]}>
+        <sphereGeometry args={[1, 32, 32]} />
+        <meshStandardMaterial color="orange" />
+      </mesh>
+      <Center>
+        <CadModel
+          colliders="trimesh"
+          material={steel}
+          outline
+          physicsType="fixed"
+          rotation={[Math.PI / 2, Math.PI / 2, 0]}
+          scale={0.2}
+          seed={seed}
+          shape={boardShape}
+        />
+        <RigidBody colliders="cuboid" position={[2.5, 12, 8]} type="fixed">
+          <mesh>
+            <boxGeometry args={[1, 24, boardWidth]} />
+            <meshPhysicalMaterial color={0xa0d2e9} opacity={0.4} transparent />
           </mesh>
-          <BallCollider args={[0.6]} friction={0.4} />
         </RigidBody>
-      </Physics>
-    </Fragment>
+      </Center>
+      <RigidBody
+        colliders={false}
+        position={[-1, 20, 0]}
+        ref={ballRef}
+        type="dynamic"
+      >
+        <mesh castShadow receiveShadow ref={ballObjRef}>
+          <sphereGeometry args={[0.6, 64, 64]} />
+          <meshPhysicalMaterial {...ballMat} />
+        </mesh>
+        <BallCollider args={[0.6]} friction={0.4} />
+      </RigidBody>
+    </Physics>
   );
 }

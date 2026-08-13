@@ -1,7 +1,6 @@
 import seedrandom from 'seedrandom';
 import modeling from '@jscad/modeling';
 import { Vec3 } from '@jscad/modeling/src/maths/vec3';
-import { Geom3 } from '@jscad/modeling/src/geometries/types';
 
 import { Material } from '../types';
 import {
@@ -10,15 +9,15 @@ import {
   Color,
   DataTexture,
   NearestFilter,
-  RGBFormat,
+  RGBAFormat,
   Vector3
 } from 'three';
 
 /* eslint-disable-next-line import-x/no-named-as-default-member */
 const { primitives, transforms, booleans } = modeling;
-const { cuboid, roundedCuboid, roundedCylinder } = primitives;
-const { intersect, union } = booleans;
-const { translate } = transforms;
+const { cuboid, roundedCylinder } = primitives;
+const { translate, rotate } = transforms;
+const { union } = booleans;
 
 export const ballMaterial: Material = {
   id: 'Metal063',
@@ -126,20 +125,23 @@ export function createThreeToneTexture(
   const mid = new Color(midHex);
   const highlight = new Color(highlightHex);
 
-  // Create a 3-pixel 1D array (RGB format)
+  // Create a 3-pixel 1D array (RGBA format, 4 bytes per texel)
   const data = new Uint8Array([
     Math.floor(shadow.r * 255),
     Math.floor(shadow.g * 255),
     Math.floor(shadow.b * 255),
+    255,
     Math.floor(mid.r * 255),
     Math.floor(mid.g * 255),
     Math.floor(mid.b * 255),
+    255,
     Math.floor(highlight.r * 255),
     Math.floor(highlight.g * 255),
-    Math.floor(highlight.b * 255)
+    Math.floor(highlight.b * 255),
+    255
   ]);
 
-  const texture = new DataTexture(data, 3, 1, RGBFormat);
+  const texture = new DataTexture(data, 3, 1, RGBAFormat);
 
   texture.minFilter = NearestFilter;
   texture.magFilter = NearestFilter;
@@ -147,26 +149,46 @@ export function createThreeToneTexture(
   return texture;
 }
 
-const backboardSize = [120, 80, 4];
+const backboardSize: Vec3 = [120, 80, 4];
 const pinSize = [3, 8]; // diameter must be an integer
 const pinCount = 32;
 const ballDiameter = 6;
 const pinRoundRadius = 0.2;
+const wallThickness = 8;
+const wallDepth = 20;
+export const boardWidth = (backboardSize[1] + wallThickness * 2) * 0.2;
 
 const backBoard = () =>
   translate(
     [backboardSize[0] / 2, backboardSize[1] / 2, 0],
     union(
       cuboid({
-        size: [backboardSize[0], backboardSize[1], backboardSize[2] / 2]
+        size: backboardSize
       }),
       translate(
-        [0, 0, backboardSize[2] / 4],
-        topHalf(
-          [backboardSize[0], backboardSize[1], backboardSize[2]],
-          roundedCuboid({
-            roundRadius: 1,
-            size: [backboardSize[0], backboardSize[1], backboardSize[2]]
+        [0, (backboardSize[1] + wallThickness) / 2, 0],
+        rotate(
+          [0, 0, Math.PI / 2],
+          cuboid({
+            size: [wallThickness, backboardSize[0], wallDepth]
+          })
+        )
+      ),
+      translate(
+        [0, -(backboardSize[1] + wallThickness) / 2, 0],
+        rotate(
+          [0, 0, Math.PI / 2],
+          cuboid({
+            size: [wallThickness, backboardSize[0], wallDepth]
+          })
+        )
+      ),
+      translate(
+        [-(backboardSize[0] + wallThickness) / 2, 0, 0],
+        rotate(
+          [0, 0, Math.PI],
+          cuboid({
+            size: [wallThickness, backboardSize[0], wallDepth]
           })
         )
       )
@@ -181,14 +203,14 @@ const pin = () =>
     roundRadius: pinRoundRadius
   });
 
-const topHalf = (size: Vec3, geometry: Geom3) =>
-  intersect(
-    cuboid({
-      size: [size[0], size[1], size[2] / 2],
-      center: [0, 0, size[2] / 4]
-    }),
-    geometry
-  );
+// const topHalf = (size: Vec3, geometry: Geom3) =>
+//   intersect(
+//     cuboid({
+//       size: [size[0], size[1], size[2] / 2],
+//       center: [0, 0, size[2] / 4]
+//     }),
+//     geometry
+//   );
 
 const pins = () => {
   let added = 0;
@@ -198,12 +220,18 @@ const pins = () => {
 
   while (added < pinCount) {
     const x = Math.min(
-      backboardSize[0] - pinSize[0],
-      Math.max(pinSize[0], Math.floor(Math.random() * backboardSize[0]))
+      backboardSize[0] - pinSize[0] - ballDiameter,
+      Math.max(
+        pinSize[0] + ballDiameter,
+        Math.floor(Math.random() * backboardSize[0])
+      )
     );
     const y = Math.min(
-      backboardSize[1] - pinSize[0],
-      Math.max(pinSize[0], Math.floor(Math.random() * backboardSize[1]))
+      backboardSize[1] - pinSize[0] - ballDiameter,
+      Math.max(
+        pinSize[0] + ballDiameter,
+        Math.floor(Math.random() * backboardSize[1])
+      )
     );
 
     if (blocked.has(`${x},${y}`)) {

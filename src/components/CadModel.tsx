@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import {
   RigidBody,
   RigidBodyAutoCollider,
@@ -56,8 +56,12 @@ export default function CadModel({
   return (
     <RigidBody colliders={colliders} type={physicsType}>
       <mesh geometry={geometry} material={material} {...props}>
-        <Outlines angle={0.05} color={0x262323} thickness={4} />
-        <Edges color={0x262323} lineWidth={2} threshold={15} />
+        {outline && (
+          <Fragment>
+            <Outlines angle={0.05} color={0x262323} thickness={4} />
+            <Edges color={0x262323} lineWidth={2} threshold={15} />
+          </Fragment>
+        )}
       </mesh>
     </RigidBody>
   );
