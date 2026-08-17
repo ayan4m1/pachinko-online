@@ -5,6 +5,7 @@ import { ChangeEvent, useCallback, useState } from 'react';
 
 import Scene from '../components/Scene';
 import useDebounce from '../hooks/useDebounce';
+import SanwaButton from '../components/SanwaButton';
 
 export const Component = () => {
   const [needsReset, setNeedsReset] = useState(false);
@@ -22,7 +23,9 @@ export const Component = () => {
     []
   );
 
-  const buttonVariant = (playing ? 'warning' : 'success') as ButtonVariant;
+  const buttonVariant = (
+    playing ? 'color-orange' : 'color-green'
+  ) as ButtonVariant;
   const buttonText = (playing ? 'Pause' : 'Play') as string;
 
   return (
@@ -40,10 +43,10 @@ export const Component = () => {
         </Form.Group>
         <Form.Group>
           <Form.Label>Physics State</Form.Label>
-          {/* @ts-expect-error Button throws this weird union type error */}
-          <Button onClick={handlePlayPauseClick} variant={buttonVariant}>
+          <SanwaButton className={buttonVariant} onClick={handlePlayPauseClick}>
             {buttonText}
-          </Button>
+          </SanwaButton>
+          {/* @ts-expect-error Button throws this weird union type error */}
           <Button onClick={handleResetClick} variant="outline-warning">
             Reset
           </Button>

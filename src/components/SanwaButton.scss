@@ -1,0 +1,95 @@
+/* Outer button housing / mounting nut footprint */
+.sanwa-btn {
+  width: 90px;
+  height: 90px;
+  background: #1a1a1a;
+  border-radius: 50%;
+  padding: 6px;
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.7),
+    inset 0 2px 3px rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+}
+
+/* The fixed black/dark matte outer rim/bezel */
+.bezel {
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    circle at 35% 35%,
+    #444 0%,
+    #111 70%,
+    #050505 100%
+  );
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow:
+    inset 0 3px 6px rgba(0, 0, 0, 0.9),
+    0 1px 2px rgba(255, 255, 255, 0.08);
+  transition: transform 0.05s ease;
+}
+
+/* The movable glossy convex plunger */
+.plunger {
+  width: 72px;
+  height: 72px;
+  background: radial-gradient(
+    circle at 35% 35%,
+    #d47fb8 0%,
+    #ba23a6 50%,
+    #7d0475 100%
+  );
+  border-radius: 50%;
+  box-shadow:
+    0 5px 8px rgba(0, 0, 0, 0.5),
+    inset 0 3px 5px rgba(255, 255, 255, 0.5),
+    inset 0 -4px 6px rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform: translateY(-3px);
+  transition:
+    transform 0.04s cubic-bezier(0.15, 0.85, 0.4, 1.2),
+    box-shadow 0.04s ease;
+}
+
+.plunger.color-orange {
+  background: radial-gradient(
+    circle at 35% 35%,
+    rgba(212, 127, 127, 1) 0%,
+    rgba(186, 91, 35, 1) 50%,
+    rgba(117, 33, 5, 1) 100%
+  );
+}
+
+.plunger.color-green {
+  background: radial-gradient(
+    circle at 35% 35%,
+    #a1d47f 0%,
+    #3cba23 50%,
+    #127d04 100%
+  );
+}
+
+/* Pressed state animation mimicking microswitch travel */
+.sanwa-btn.pressed .plunger,
+.sanwa-btn:active .plunger {
+  transform: translateY(1px);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    inset 0 2px 4px rgba(0, 0, 0, 0.6),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2);
+  background: radial-gradient(circle at 40% 40%, #e62263 0%, #a30034 70%);
+}
+
+.label {
+  color: rgba(255, 255, 255, 0.85);
+  font-family: sans-serif;
+  font-weight: bold;
+  font-size: 14px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}

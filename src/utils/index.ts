@@ -48,6 +48,22 @@ export const getMaterialUrl = (
   `./textures/${id}_${resolution}-${format.toLocaleUpperCase()}_${type}.${format}`;
 
 /**
+ * Returns a random number in [0, 1) that clusters around 0.5.
+ *
+ * Averaging several uniform samples approximates a normal distribution, so
+ * values near the middle become common and the extremes become rare without
+ * ever being excluded. Higher `samples` tightens the spread; a value of 1 is
+ * equivalent to a plain Math.random() call.
+ */
+export const softRandom = (samples = 3) => {
+  let sum = 0;
+  for (let i = 0; i < samples; i++) {
+    sum += Math.random();
+  }
+  return sum / samples;
+};
+
+/**
  * Generates box-mapped (per-face planar) UVs for a non-indexed geometry.
  *
  * Each triangle is projected onto the axis plane that its face normal is most

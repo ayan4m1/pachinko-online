@@ -23,6 +23,7 @@
     "bootstrap": "^5.3.8",
     "bootswatch": "^5.3.8",
     "classnames": "^2.5.1",
+    "d3-color": "^3.1.0",
     "date-fns": "^4.4.0",
     "react": "^19.2.8",
     "react-bootstrap": "^2.10.10",
@@ -35,6 +36,7 @@
   "devDependencies": {
     "@eslint/js": "9.39.4",
     "@types/cli-table": "^0",
+    "@types/d3-color": "^3",
     "@types/node": "24.10.7",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",

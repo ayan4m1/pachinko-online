@@ -1,3 +1,4 @@
+import { rgb, hsl, RGBColor } from 'd3-color';
 import { useMemo, useRef } from 'react';
 import { MeshToonMaterial, Object3D } from 'three';
 import { useFrame } from '@react-three/fiber';
@@ -7,7 +8,12 @@ import {
   BallCollider,
   RigidBody
 } from '@react-three/rapier';
-import { Center, OrbitControls, OrthographicCamera } from '@react-three/drei';
+import {
+  Center,
+  OrbitControls,
+  OrthographicCamera,
+  Outlines
+} from '@react-three/drei';
 
 import CadModel from './CadModel';
 import useMaterial from '../hooks/useMaterial';
@@ -17,6 +23,29 @@ import {
   boardWidth,
   createThreeToneTexture
 } from '../utils';
+import { PointBin } from '../types';
+
+const rgbToHexColor = (color: RGBColor) =>
+  (color.r << 16) | (color.g << 8) | color.b;
+
+const minScore = 50;
+const maxScore = 1500;
+const scoreStep = 50;
+const scoreMinWidth = 2;
+const scoreMaxWidth = 12;
+const scoreJitter = 0.2;
+
+// narrow bins pay the most: 500 at width 2 falling linearly to 50 at width 12
+const widthToScore = (width: number) => {
+  const t = Math.min(
+    1,
+    Math.max(0, (width - scoreMinWidth) / (scoreMaxWidth - scoreMinWidth))
+  );
+  const base = maxScore + t * (minScore - maxScore);
+  const jittered = base * (1 - scoreJitter + Math.random() * scoreJitter * 2);
+
+  return Math.max(scoreStep, Math.round(jittered / scoreStep) * scoreStep);
+};
 
 interface IProps {
   clearReset: () => void;
@@ -31,6 +60,51 @@ export default function Scene({
   needsReset = false,
   paused = false
 }: IProps) {
+  const pointBins = useMemo(() => {
+    /* eslint-disable react-hooks/purity */
+    const result: PointBin[] = [];
+    const points = 3 + Math.round(Math.random() * 3);
+
+    let remainingWidth = 16;
+    let yOffset = 0;
+    for (let i = 0; i < points; i++) {
+      const color = rgbToHexColor(
+        rgb(
+          hsl(
+            Math.random() * 360,
+            0.5 + Math.random() * 0.5,
+            0.4 + Math.random() * 0.6
+          )
+        )
+      );
+      const minWidth = 2;
+      const maxWidth = remainingWidth - minWidth * (points - i - 1);
+      const width =
+        i + 1 == points
+          ? remainingWidth
+          : minWidth + Math.random() * Math.max(0, maxWidth - minWidth);
+      const score = widthToScore(width);
+      const center = yOffset + width / 2.0;
+
+      const entry: PointBin = {
+        center,
+        color,
+        score,
+        width
+      };
+
+      result.push(entry);
+
+      remainingWidth -= entry.width;
+      yOffset += entry.width;
+    }
+
+    console.dir(result);
+
+    return result;
+    /* eslint-enable react-hooks/purity */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seed]);
   const ballObjRef = useRef<Object3D | null>(null);
   const ballRef = useRef<RapierRigidBody | null>(null);
   const inited = useRef(false);
@@ -85,10 +159,6 @@ export default function Scene({
       <OrbitControls />
       <ambientLight color="white" />
       <directionalLight castShadow intensity={10} position={[5, 16, 12]} />
-      <mesh position={[5, 16, 12]}>
-        <sphereGeometry args={[1, 32, 32]} />
-        <meshStandardMaterial color="orange" />
-      </mesh>
       <Center>
         <CadModel
           colliders="trimesh"
@@ -106,6 +176,19 @@ export default function Scene({
             <meshPhysicalMaterial color={0xa0d2e9} opacity={0.4} transparent />
           </mesh>
         </RigidBody>
+        {pointBins.map((bin, i) => (
+          <RigidBody
+            colliders="cuboid"
+            key={i}
+            position={[1, 0, bin.center]}
+            type="fixed"
+          >
+            <mesh>
+              <boxGeometry args={[1, 2, bin.width]} />
+              <meshPhysicalMaterial color={bin.color} />
+            </mesh>
+          </RigidBody>
+        ))}
       </Center>
       <RigidBody
         colliders={false}
@@ -116,6 +199,7 @@ export default function Scene({
         <mesh castShadow receiveShadow ref={ballObjRef}>
           <sphereGeometry args={[0.6, 64, 64]} />
           <meshPhysicalMaterial {...ballMat} />
+          <Outlines color={0x262323} thickness={4} />
         </mesh>
         <BallCollider args={[0.6]} friction={0.4} />
       </RigidBody>

@@ -2,9 +2,11 @@
 @import "~bootswatch/dist/darkly/variables";
 @import "~bootstrap/scss/bootstrap";
 @import "~bootswatch/dist/darkly/bootswatch";
+// Component styles
+@import "components/SanwaButton";
 
 html,
 body,
 body > div:first-child {
-  height: 100%;
+  height: 100vh;
 }
