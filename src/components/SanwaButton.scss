@@ -1,5 +1,6 @@
 /* Outer button housing / mounting nut footprint */
 .sanwa-btn {
+  display: inline-block;
   width: 90px;
   height: 90px;
   background: #1a1a1a;
@@ -57,12 +58,12 @@
     box-shadow 0.04s ease;
 }
 
-.plunger.color-orange {
+.plunger.color-yellow {
   background: radial-gradient(
     circle at 35% 35%,
-    rgba(212, 127, 127, 1) 0%,
-    rgba(186, 91, 35, 1) 50%,
-    rgba(117, 33, 5, 1) 100%
+    #d4cd7f 0%,
+    #baab23 50%,
+    #968515 100%
   );
 }
 
@@ -72,6 +73,15 @@
     #a1d47f 0%,
     #3cba23 50%,
     #127d04 100%
+  );
+}
+
+.plunger.color-red {
+  background: radial-gradient(
+    circle at 35% 35%,
+    #d47f7f 0%,
+    #ba3c23 50%,
+    #7d1404 100%
   );
 }
 

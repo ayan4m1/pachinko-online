@@ -269,7 +269,7 @@ const pins = () => {
 
   return union(
     ...coords.map((coords) =>
-      translate([coords[0], coords[1], backboardSize[2] / 2], pin())
+      translate([coords[0], coords[1], backboardSize[2] / 2 - 1], pin())
     )
   );
 };

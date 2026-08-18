@@ -1,11 +1,23 @@
 import { ComponentPropsWithoutRef } from 'react';
 
-export default function SanwaButton(props: ComponentPropsWithoutRef<'div'>) {
+import { SanwaButtonVariant } from '../types';
+
+type Props = {
+  label: string;
+  variant?: SanwaButtonVariant;
+} & ComponentPropsWithoutRef<'div'>;
+
+export default function SanwaButton(props: Props) {
+  const { label, variant = SanwaButtonVariant.Primary } = props;
+
   return (
-    <div className="sanwa-btn pink" data-label="Insert Coin">
+    <div className="sanwa-btn">
       <div className="bezel">
-        <div {...props} className={`plunger ${props.className ?? ''}`}>
-          <span className="label">Play</span>
+        <div
+          {...props}
+          className={`plunger ${variant ? `color-${variant}` : ''}`}
+        >
+          <span className="label">{label}</span>
         </div>
       </div>
     </div>

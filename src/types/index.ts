@@ -9,3 +9,10 @@ export type PointBin = {
   width: number;
   score: number;
 };
+
+export enum SanwaButtonVariant {
+  Primary = '',
+  Error = 'red',
+  Warning = 'yellow',
+  Success = 'green'
+}

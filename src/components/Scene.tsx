@@ -158,13 +158,36 @@ export default function Scene({
       <OrthographicCamera makeDefault position={[20, 0, 0]} zoom={25} />
       <OrbitControls />
       <ambientLight color="white" />
-      <directionalLight castShadow intensity={10} position={[5, 16, 12]} />
+      {/*
+        The default directional shadow camera is a 10x10 ortho frustum, which
+        only covers part of the 24x16 board - pegs outside it get no shadow at
+        all. Widen it to enclose the whole board (plus the guide wall and the
+        ball's spawn height) and raise the map size to keep the thin pegs from
+        aliasing away. The biases suppress acne on the near-tangent sides of
+        the peg cylinders.
+      */}
+      <directionalLight
+        castShadow
+        intensity={5}
+        position={[5, 16, 2]}
+        shadow-bias={-0.0005}
+        shadow-camera-bottom={-20}
+        shadow-camera-far={80}
+        shadow-camera-left={-20}
+        shadow-camera-near={0.5}
+        shadow-camera-right={20}
+        shadow-camera-top={20}
+        shadow-mapSize={[2048, 2048]}
+        shadow-normalBias={0.02}
+      />
       <Center>
         <CadModel
+          castShadow
           colliders="trimesh"
           material={steel}
           outline
           physicsType="fixed"
+          receiveShadow
           rotation={[Math.PI / 2, Math.PI / 2, 0]}
           scale={0.2}
           seed={seed}

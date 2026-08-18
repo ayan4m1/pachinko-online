@@ -1,11 +1,11 @@
+import { Form } from 'react-bootstrap';
 import { Canvas } from '@react-three/fiber';
-import { Button, Form } from 'react-bootstrap';
-import { ButtonVariant } from 'react-bootstrap/esm/types';
 import { ChangeEvent, useCallback, useState } from 'react';
 
 import Scene from '../components/Scene';
 import useDebounce from '../hooks/useDebounce';
 import SanwaButton from '../components/SanwaButton';
+import { SanwaButtonVariant } from '../types';
 
 export const Component = () => {
   const [needsReset, setNeedsReset] = useState(false);
@@ -23,14 +23,22 @@ export const Component = () => {
     []
   );
 
-  const buttonVariant = (
-    playing ? 'color-orange' : 'color-green'
-  ) as ButtonVariant;
+  const buttonVariant = playing
+    ? SanwaButtonVariant.Error
+    : SanwaButtonVariant.Success;
   const buttonText = (playing ? 'Pause' : 'Play') as string;
 
   return (
     <div style={{ height: '100%' }}>
       <title>Play Online Pachinko</title>
+      <Canvas shadows>
+        <Scene
+          clearReset={handleResetClear}
+          needsReset={needsReset}
+          paused={!playing}
+          seed={debouncedSeed}
+        />
+      </Canvas>
       <Form>
         <Form.Group>
           <Form.Label>Seed</Form.Label>
@@ -43,23 +51,18 @@ export const Component = () => {
         </Form.Group>
         <Form.Group>
           <Form.Label>Physics State</Form.Label>
-          <SanwaButton className={buttonVariant} onClick={handlePlayPauseClick}>
-            {buttonText}
-          </SanwaButton>
-          {/* @ts-expect-error Button throws this weird union type error */}
-          <Button onClick={handleResetClick} variant="outline-warning">
-            Reset
-          </Button>
+          <SanwaButton
+            label={buttonText}
+            onClick={handlePlayPauseClick}
+            variant={buttonVariant}
+          />
+          <SanwaButton
+            label="Reset"
+            onClick={handleResetClick}
+            variant={SanwaButtonVariant.Warning}
+          />
         </Form.Group>
       </Form>
-      <Canvas shadows>
-        <Scene
-          clearReset={handleResetClear}
-          needsReset={needsReset}
-          paused={!playing}
-          seed={debouncedSeed}
-        />
-      </Canvas>
     </div>
   );
 };
