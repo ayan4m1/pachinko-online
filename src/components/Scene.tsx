@@ -1,18 +1,20 @@
 import { rgb, hsl, RGBColor } from 'd3-color';
-import { useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { MeshToonMaterial, Object3D } from 'three';
 import { useFrame } from '@react-three/fiber';
 import {
   Physics,
   RapierRigidBody,
   BallCollider,
-  RigidBody
+  RigidBody,
+  useRapier
 } from '@react-three/rapier';
 import {
   Center,
   OrbitControls,
   OrthographicCamera,
-  Outlines
+  Outlines,
+  Text3D
 } from '@react-three/drei';
 
 import CadModel from './CadModel';
@@ -27,6 +29,20 @@ import { PointBin } from '../types';
 
 const rgbToHexColor = (color: RGBColor) =>
   (color.r << 16) | (color.g << 8) | color.b;
+
+/*
+  A real pachinko ball is 11mm across and ours is 0.6 units across (CAD
+  ballDiameter of 3 at the CadModel scale of 0.2), which fixes the scale of the
+  world at ~54.5 units per meter. The board agrees: the 120-unit backboard
+  renders 24 units long, or 0.44m, against a real playfield of roughly 0.45m.
+*/
+const ballRadius = 0.3;
+const ballDiameterMeters = 0.011;
+const unitsPerMeter = (ballRadius * 2) / ballDiameterMeters; // ~54.5
+
+// time is unscaled - rapier steps in real seconds - so acceleration converts by
+// the length scale alone
+// const earthGravity = 9.6 * unitsPerMeter; // ~523.6 units/s^2
 
 const minScore = 50;
 const maxScore = 1500;
@@ -47,19 +63,45 @@ const widthToScore = (width: number) => {
   return Math.max(scoreStep, Math.round(jittered / scoreStep) * scoreStep);
 };
 
+/*
+  Rapier's internal tolerances - contact prediction distance, sleep thresholds,
+  CCD margins - are tuned assuming 1 unit is roughly 1 meter. At ~54.5 units per
+  meter the ball is small and fast enough to tunnel through the pins and jitter
+  on contact, so tell the world our actual scale and let it rescale them.
+  @react-three/rapier doesn't surface this as a <Physics> prop, so it has to be
+  set on the world from a child.
+*/
+function WorldScale() {
+  const { world } = useRapier();
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/immutability
+    world.lengthUnit = unitsPerMeter;
+  }, [world]);
+
+  return null;
+}
+
 interface IProps {
+  addToScore: (toAdd: number) => void;
   clearReset: () => void;
-  seed: string;
   needsReset?: boolean;
   paused?: boolean;
+  score: number;
+  seed: string;
+  triggerReset: () => void;
 }
 
 export default function Scene({
+  addToScore,
   clearReset,
-  seed,
   needsReset = false,
-  paused = false
+  paused = false,
+  score,
+  seed,
+  triggerReset
 }: IProps) {
+  // todo: prevent this from running multiple times on mount
   const pointBins = useMemo(() => {
     /* eslint-disable react-hooks/purity */
     const result: PointBin[] = [];
@@ -99,8 +141,6 @@ export default function Scene({
       yOffset += entry.width;
     }
 
-    console.dir(result);
-
     return result;
     /* eslint-enable react-hooks/purity */
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -109,6 +149,15 @@ export default function Scene({
   const ballRef = useRef<RapierRigidBody | null>(null);
   const inited = useRef(false);
   const ballMat = useMaterial(ballMaterial);
+  const handleScoreCollision = useCallback(
+    (index: number) => () => {
+      const pointBin = pointBins[index];
+
+      addToScore(pointBin.score);
+      triggerReset();
+    },
+    [pointBins, addToScore, triggerReset]
+  );
 
   const toonGradient = createThreeToneTexture('#3d3764', '#93a5cb', '#ffffff');
   const steel = useMemo(
@@ -155,9 +204,10 @@ export default function Scene({
 
   return (
     <Physics gravity={[0, -26, 0]} paused={paused}>
+      <WorldScale />
       <OrthographicCamera makeDefault position={[20, 0, 0]} zoom={25} />
       <OrbitControls />
-      <ambientLight color="white" />
+      <ambientLight color="aliceblue" />
       {/*
         The default directional shadow camera is a 10x10 ortho frustum, which
         only covers part of the 24x16 board - pegs outside it get no shadow at
@@ -180,6 +230,14 @@ export default function Scene({
         shadow-mapSize={[2048, 2048]}
         shadow-normalBias={0.02}
       />
+      <Text3D
+        font="/fonts/dm_mono.json"
+        position={[0, 13, 13]}
+        rotation={[0, Math.PI / 2, 0]}
+      >
+        Score: {score}
+        <meshStandardMaterial color="green" />
+      </Text3D>
       <Center>
         <CadModel
           castShadow
@@ -187,7 +245,6 @@ export default function Scene({
           material={steel}
           outline
           physicsType="fixed"
-          receiveShadow
           rotation={[Math.PI / 2, Math.PI / 2, 0]}
           scale={0.2}
           seed={seed}
@@ -203,6 +260,7 @@ export default function Scene({
           <RigidBody
             colliders="cuboid"
             key={i}
+            onCollisionEnter={handleScoreCollision(i)}
             position={[1, 0, bin.center]}
             type="fixed"
           >
@@ -220,11 +278,11 @@ export default function Scene({
         type="dynamic"
       >
         <mesh castShadow receiveShadow ref={ballObjRef}>
-          <sphereGeometry args={[0.6, 64, 64]} />
+          <sphereGeometry args={[ballRadius, 64, 64]} />
           <meshPhysicalMaterial {...ballMat} />
           <Outlines color={0x262323} thickness={4} />
         </mesh>
-        <BallCollider args={[0.6]} friction={0.4} />
+        <BallCollider args={[ballRadius]} friction={0.4} />
       </RigidBody>
     </Physics>
   );

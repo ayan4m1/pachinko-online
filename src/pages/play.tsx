@@ -8,6 +8,7 @@ import SanwaButton from '../components/SanwaButton';
 import { SanwaButtonVariant } from '../types';
 
 export const Component = () => {
+  const [score, setScore] = useState(0);
   const [needsReset, setNeedsReset] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [seed, setSeed] = useState('42');
@@ -17,9 +18,11 @@ export const Component = () => {
   const handleResetClear = useCallback(() => setNeedsReset(false), []);
   const handlePlayPauseClick = useCallback(() => setPlaying((val) => !val), []);
   const handleSeedChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      setSeed(event.target.value);
-    },
+    (event: ChangeEvent<HTMLInputElement>) => setSeed(event.target.value),
+    []
+  );
+  const handleScoreAdd = useCallback(
+    (toAdd: number) => setScore((pts) => pts + toAdd),
     []
   );
 
@@ -33,10 +36,13 @@ export const Component = () => {
       <title>Play Online Pachinko</title>
       <Canvas shadows>
         <Scene
+          addToScore={handleScoreAdd}
           clearReset={handleResetClear}
           needsReset={needsReset}
           paused={!playing}
+          score={score}
           seed={debouncedSeed}
+          triggerReset={handleResetClick}
         />
       </Canvas>
       <Form>

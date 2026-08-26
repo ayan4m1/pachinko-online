@@ -15,7 +15,7 @@ import {
 
 /* eslint-disable-next-line import-x/no-named-as-default-member */
 const { primitives, transforms, booleans } = modeling;
-const { cuboid, roundedCylinder } = primitives;
+const { cuboid, cylinder } = primitives;
 const { translate, rotate } = transforms;
 const { union } = booleans;
 
@@ -166,10 +166,29 @@ export function createThreeToneTexture(
 }
 
 const backboardSize: Vec3 = [120, 80, 4];
-const pinSize = [3, 8]; // diameter must be an integer
-const pinCount = 32;
-const ballDiameter = 6;
-const pinRoundRadius = 0.2;
+// real-world scale: an 11mm ball against the ~45cm playfield the 120-unit
+// backboard stands in for, so ~1/40th of the board rather than 1/20th
+const ballDiameter = 3;
+// everything below is quoted in real millimeters and converted, since the board
+// only means anything relative to the ball
+const unitsPerMm = ballDiameter / 11;
+
+/*
+  Real pachinko nails (kugi) are about 1.5mm across, which is 0.41 units here -
+  the old value of 3 was a 11mm nail, as thick as the ball itself. Nails are not
+  on an integer lattice any more, so minSpacing below can no longer be assumed
+  to be a whole number.
+*/
+const pinSize = [1.5 * unitsPerMm, 8];
+
+/*
+  A real machine carries somewhere around 300 nails. Random placement saturates
+  before a hand-laid hexagonal field does, so this is a target rather than a
+  promise - placePins stops early rather than spinning if the board fills up.
+*/
+const pinCount = 250;
+const maxPinAttempts = 5000;
+// const pinRoundRadius = 0.2;
 const wallThickness = 8;
 const wallDepth = 20;
 export const boardWidth = (backboardSize[1] + wallThickness * 2) * 0.2;
@@ -212,11 +231,10 @@ const backBoard = () =>
   );
 
 const pin = () =>
-  roundedCylinder({
+  cylinder({
     radius: pinSize[0] / 2,
     height: pinSize[1],
-    center: [pinSize[0] / 2, pinSize[0] / 2, pinSize[1] / 2],
-    roundRadius: pinRoundRadius
+    center: [pinSize[0] / 2, pinSize[0] / 2, pinSize[1] / 2]
   });
 
 // const topHalf = (size: Vec3, geometry: Geom3) =>
@@ -230,32 +248,34 @@ const pin = () =>
 
 const pins = () => {
   let added = 0;
+  let attempts = 0;
   const coords = [];
   const blocked = new Set();
+  // centers this far apart leave a ball-sized gap between two adjacent nails,
+  // which is the whole game - the blocking disc is swept over whole units, so
+  // the radius of the sweep rounds up while the test itself stays exact
   const minSpacing = pinSize[0] + ballDiameter;
+  const sweep = Math.ceil(minSpacing);
 
-  while (added < pinCount) {
+  while (added < pinCount && attempts < maxPinAttempts) {
+    attempts++;
+
+    // clamp to whole units so these keys can collide with the blocked set
     const x = Math.min(
-      backboardSize[0] - pinSize[0] - ballDiameter,
-      Math.max(
-        pinSize[0] + ballDiameter,
-        Math.floor(Math.random() * backboardSize[0])
-      )
+      backboardSize[0] - sweep,
+      Math.max(sweep, Math.floor(Math.random() * backboardSize[0]))
     );
     const y = Math.min(
-      backboardSize[1] - pinSize[0] - ballDiameter,
-      Math.max(
-        pinSize[0] + ballDiameter,
-        Math.floor(Math.random() * backboardSize[1])
-      )
+      backboardSize[1] - sweep,
+      Math.max(sweep, Math.floor(Math.random() * backboardSize[1]))
     );
 
     if (blocked.has(`${x},${y}`)) {
       continue;
     }
 
-    for (let dx = -minSpacing; dx <= minSpacing; dx++) {
-      for (let dy = -minSpacing; dy <= minSpacing; dy++) {
+    for (let dx = -sweep; dx <= sweep; dx++) {
+      for (let dy = -sweep; dy <= sweep; dy++) {
         if (dx * dx + dy * dy < minSpacing * minSpacing) {
           blocked.add(`${x + dx},${y + dy}`);
         }
@@ -264,7 +284,10 @@ const pins = () => {
 
     coords.push([x, y]);
     added++;
-    console.log(`Placing pin ${added}`);
+  }
+
+  if (added < pinCount) {
+    console.warn(`Board filled up at ${added} of ${pinCount} pins`);
   }
 
   return union(
