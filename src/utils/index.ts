@@ -191,7 +191,7 @@ const maxPinAttempts = 5000;
 // const pinRoundRadius = 0.2;
 const wallThickness = 8;
 const wallDepth = 20;
-export const boardWidth = (backboardSize[1] + wallThickness * 2) * 0.2;
+export const boardWidth = backboardSize[1] + wallThickness * 2;
 
 const backBoard = () =>
   translate(
