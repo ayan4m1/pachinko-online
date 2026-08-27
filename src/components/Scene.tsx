@@ -95,6 +95,7 @@ const widthToScore = (width: number) => {
 interface IProps {
   addToScore: (toAdd: number) => void;
   clearReset: () => void;
+  coins: number;
   needsReset?: boolean;
   paused?: boolean;
   score: number;
@@ -105,6 +106,7 @@ interface IProps {
 export default function Scene({
   addToScore,
   clearReset,
+  coins,
   needsReset = false,
   paused = false,
   score,
@@ -180,7 +182,12 @@ export default function Scene({
   );
 
   useFrame(() => {
-    if (ballObjRef.current?.parent && ballRef.current && needsReset) {
+    if (
+      ballObjRef.current?.parent &&
+      ballRef.current &&
+      needsReset &&
+      coins > 0
+    ) {
       ballRef.current.setTranslation({ x: -5, y: 100, z: 0 }, true);
       clearReset?.();
     }
@@ -256,6 +263,16 @@ export default function Scene({
         shadow-mapSize={[2048, 2048]}
         shadow-normalBias={0.1}
       />
+      <Text3D
+        font="/fonts/dm_mono.json"
+        height={1}
+        position={[0, 65, -35]}
+        rotation={[0, Math.PI / 2, 0]}
+        size={5}
+      >
+        Coins: {coins}
+        <meshStandardMaterial color="blue" />
+      </Text3D>
       <Text3D
         font="/fonts/dm_mono.json"
         height={1}

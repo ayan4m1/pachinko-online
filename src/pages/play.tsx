@@ -8,13 +8,17 @@ import SanwaButton from '../components/SanwaButton';
 import { SanwaButtonVariant } from '../types';
 
 export const Component = () => {
+  const [coins, setCoins] = useState(5);
   const [score, setScore] = useState(0);
   const [needsReset, setNeedsReset] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [seed, setSeed] = useState('42');
   const debouncedSeed = useDebounce(seed, 750);
 
-  const handleResetClick = useCallback(() => setNeedsReset(true), []);
+  const handleResetClick = useCallback(() => {
+    setNeedsReset(true);
+    setCoins((val) => Math.max(0, val - 1));
+  }, []);
   const handleResetClear = useCallback(() => setNeedsReset(false), []);
   const handlePlayPauseClick = useCallback(() => setPlaying((val) => !val), []);
   const handleSeedChange = useCallback(
@@ -38,6 +42,7 @@ export const Component = () => {
         <Scene
           addToScore={handleScoreAdd}
           clearReset={handleResetClear}
+          coins={coins}
           needsReset={needsReset}
           paused={!playing}
           score={score}
