@@ -2,7 +2,7 @@ import seedrandom from 'seedrandom';
 import modeling from '@jscad/modeling';
 import { Vec3 } from '@jscad/modeling/src/maths/vec3';
 
-import { Material } from '../types';
+import { Material, PointBin } from '../types';
 import {
   BufferAttribute,
   BufferGeometry,
@@ -12,6 +12,7 @@ import {
   RGBAFormat,
   Vector3
 } from 'three';
+import { hsl, rgb, RGBColor } from 'd3-color';
 
 /* eslint-disable-next-line import-x/no-named-as-default-member */
 const { primitives, transforms, booleans } = modeling;
@@ -237,23 +238,11 @@ const pin = () =>
     center: [pinSize[0] / 2, pinSize[0] / 2, pinSize[1] / 2]
   });
 
-// const topHalf = (size: Vec3, geometry: Geom3) =>
-//   intersect(
-//     cuboid({
-//       size: [size[0], size[1], size[2] / 2],
-//       center: [0, 0, size[2] / 4]
-//     }),
-//     geometry
-//   );
-
 const pins = () => {
   let added = 0;
   let attempts = 0;
   const coords = [];
   const blocked = new Set();
-  // centers this far apart leave a ball-sized gap between two adjacent nails,
-  // which is the whole game - the blocking disc is swept over whole units, so
-  // the radius of the sweep rounds up while the test itself stays exact
   const minSpacing = pinSize[0] + ballDiameter;
   const sweep = Math.ceil(minSpacing);
 
@@ -295,6 +284,79 @@ const pins = () => {
       translate([coords[0], coords[1], backboardSize[2] / 2 - 1], pin())
     )
   );
+};
+
+/*
+  World units are CAD units - the model renders unscaled. A real pachinko ball is
+  11mm across and ours is 3 units across (the CAD ballDiameter), which fixes the
+  scale of the world at ~272.7 units per meter. The board agrees: the 120-unit
+  backboard is 0.44m long, against a real playfield of roughly 0.45m.
+*/
+export const ballRadius = 1.5;
+const ballDiameterMeters = 0.011;
+export const unitsPerMeter = (ballRadius * 2) / ballDiameterMeters; // ~272.7
+
+const rgbToHexColor = (color: RGBColor) =>
+  (color.r << 16) | (color.g << 8) | color.b;
+
+const minScore = 50;
+const maxScore = 1500;
+const scoreStep = 50;
+const scoreMinWidth = 10;
+const scoreMaxWidth = 60;
+const scoreJitter = 0.2;
+
+// narrow bins pay the most: 1500 at width 10 falling linearly to 50 at width 60
+const widthToScore = (width: number) => {
+  const t = Math.min(
+    1,
+    Math.max(0, (width - scoreMinWidth) / (scoreMaxWidth - scoreMinWidth))
+  );
+  const base = maxScore + t * (minScore - maxScore);
+  const jittered = base * (1 - scoreJitter + Math.random() * scoreJitter * 2);
+
+  return Math.max(scoreStep, Math.round(jittered / scoreStep) * scoreStep);
+};
+
+export const createPointBins = () => {
+  const result: PointBin[] = [];
+  const points = 3 + Math.round(Math.random() * 3);
+
+  let remainingWidth = 80;
+  let yOffset = 0;
+  for (let i = 0; i < points; i++) {
+    const color = rgbToHexColor(
+      rgb(
+        hsl(
+          Math.random() * 360,
+          0.5 + Math.random() * 0.5,
+          0.4 + Math.random() * 0.6
+        )
+      )
+    );
+    const minWidth = 10;
+    const maxWidth = remainingWidth - minWidth * (points - i - 1);
+    const width =
+      i + 1 == points
+        ? remainingWidth
+        : minWidth + Math.random() * Math.max(0, maxWidth - minWidth);
+    const score = widthToScore(width);
+    const center = yOffset + width / 2.0;
+
+    const entry: PointBin = {
+      center,
+      color,
+      score,
+      width
+    };
+
+    result.push(entry);
+
+    remainingWidth -= entry.width;
+    yOffset += entry.width;
+  }
+
+  return result;
 };
 
 export const boardShape = (seed: string) => {

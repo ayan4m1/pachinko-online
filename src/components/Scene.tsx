@@ -1,43 +1,21 @@
-import { rgb, hsl, RGBColor } from 'd3-color';
 import { useCallback, useMemo, useRef } from 'react';
 import { MeshToonMaterial, Object3D } from 'three';
 import { useFrame } from '@react-three/fiber';
-import {
-  Physics,
-  RapierRigidBody,
-  BallCollider,
-  RigidBody
-} from '@react-three/rapier';
-import {
-  Center,
-  OrbitControls,
-  OrthographicCamera,
-  Outlines,
-  Text3D
-} from '@react-three/drei';
+import { Physics, RapierRigidBody } from '@react-three/rapier';
+import { Center, OrbitControls, OrthographicCamera } from '@react-three/drei';
 
+import BallModel from './BallModel';
 import CadModel from './CadModel';
-import useMaterial from '../hooks/useMaterial';
+import GlassModel from './GlassModel';
+import PointBinModel from './PointBinModel';
+import StaticText from './StaticText';
 import {
-  ballMaterial,
+  ballRadius,
   boardShape,
-  boardWidth,
-  createThreeToneTexture
+  createPointBins,
+  createThreeToneTexture,
+  unitsPerMeter
 } from '../utils';
-import { PointBin } from '../types';
-
-const rgbToHexColor = (color: RGBColor) =>
-  (color.r << 16) | (color.g << 8) | color.b;
-
-/*
-  World units are CAD units - the model renders unscaled. A real pachinko ball is
-  11mm across and ours is 3 units across (the CAD ballDiameter), which fixes the
-  scale of the world at ~272.7 units per meter. The board agrees: the 120-unit
-  backboard is 0.44m long, against a real playfield of roughly 0.45m.
-*/
-const ballRadius = 1.5;
-const ballDiameterMeters = 0.011;
-const unitsPerMeter = (ballRadius * 2) / ballDiameterMeters; // ~272.7
 
 // time is unscaled - rapier steps in real seconds - so acceleration converts by
 // the length scale alone
@@ -73,25 +51,6 @@ const lengthUnit = unitsPerMeter;
 const timeStep = 1 / 120;
 const maxCcdSubsteps = 8;
 
-const minScore = 50;
-const maxScore = 1500;
-const scoreStep = 50;
-const scoreMinWidth = 10;
-const scoreMaxWidth = 60;
-const scoreJitter = 0.2;
-
-// narrow bins pay the most: 1500 at width 10 falling linearly to 50 at width 60
-const widthToScore = (width: number) => {
-  const t = Math.min(
-    1,
-    Math.max(0, (width - scoreMinWidth) / (scoreMaxWidth - scoreMinWidth))
-  );
-  const base = maxScore + t * (minScore - maxScore);
-  const jittered = base * (1 - scoreJitter + Math.random() * scoreJitter * 2);
-
-  return Math.max(scoreStep, Math.round(jittered / scoreStep) * scoreStep);
-};
-
 interface IProps {
   addToScore: (toAdd: number) => void;
   clearReset: () => void;
@@ -114,61 +73,27 @@ export default function Scene({
   triggerReset
 }: IProps) {
   // todo: prevent this from running multiple times on mount
-  const pointBins = useMemo(() => {
-    /* eslint-disable react-hooks/purity */
-    const result: PointBin[] = [];
-    const points = 3 + Math.round(Math.random() * 3);
-
-    let remainingWidth = 80;
-    let yOffset = 0;
-    for (let i = 0; i < points; i++) {
-      const color = rgbToHexColor(
-        rgb(
-          hsl(
-            Math.random() * 360,
-            0.5 + Math.random() * 0.5,
-            0.4 + Math.random() * 0.6
-          )
-        )
-      );
-      const minWidth = 10;
-      const maxWidth = remainingWidth - minWidth * (points - i - 1);
-      const width =
-        i + 1 == points
-          ? remainingWidth
-          : minWidth + Math.random() * Math.max(0, maxWidth - minWidth);
-      const score = widthToScore(width);
-      const center = yOffset + width / 2.0;
-
-      const entry: PointBin = {
-        center,
-        color,
-        score,
-        width
-      };
-
-      result.push(entry);
-
-      remainingWidth -= entry.width;
-      yOffset += entry.width;
-    }
-
-    return result;
-    /* eslint-enable react-hooks/purity */
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seed]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const pointBins = useMemo(() => createPointBins(), [seed]);
   const ballObjRef = useRef<Object3D | null>(null);
   const ballRef = useRef<RapierRigidBody | null>(null);
   const inited = useRef(false);
-  const ballMat = useMaterial(ballMaterial);
   const handleScoreCollision = useCallback(
     (index: number) => () => {
+      if (coins === 0) {
+        return;
+      }
+
       const pointBin = pointBins[index];
 
       addToScore(pointBin.score);
       triggerReset();
     },
-    [pointBins, addToScore, triggerReset]
+    [pointBins, addToScore, triggerReset, coins]
+  );
+  const binHandlers = useMemo(
+    () => pointBins.map((_, i) => handleScoreCollision(i)),
+    [handleScoreCollision, pointBins]
   );
 
   const toonGradient = createThreeToneTexture('#3d3764', '#93a5cb', '#ffffff');
@@ -198,12 +123,6 @@ export default function Scene({
 
     inited.current = true;
 
-    /*
-      Impulse is mass times delta-v, so quoting the launch as real-world speeds
-      and converting keeps it honest through any future rescale - the old raw
-      impulses had to be re-guessed every time the scale moved. These reproduce
-      the previous ~0.8 m/s launch.
-    */
     const mass = ballRef.current.mass();
     const launchSpeed = 0.8 * unitsPerMeter * timeScale;
     const spread = 0.8 * unitsPerMeter * timeScale;
@@ -263,26 +182,12 @@ export default function Scene({
         shadow-mapSize={[2048, 2048]}
         shadow-normalBias={0.1}
       />
-      <Text3D
-        font="/fonts/dm_mono.json"
-        height={1}
-        position={[0, 65, -35]}
-        rotation={[0, Math.PI / 2, 0]}
-        size={5}
-      >
-        Coins: {coins}
-        <meshStandardMaterial color="blue" />
-      </Text3D>
-      <Text3D
-        font="/fonts/dm_mono.json"
-        height={1}
-        position={[0, 65, 65]}
-        rotation={[0, Math.PI / 2, 0]}
-        size={5}
-      >
-        Score: {score}
-        <meshStandardMaterial color="green" />
-      </Text3D>
+      <StaticText
+        coins={coins}
+        maxCoins={5}
+        maxScore={pointBins.reduce((total, bin) => total + bin.score, 0)}
+        score={score}
+      />
       <Center>
         <CadModel
           colliders="trimesh"
@@ -294,48 +199,17 @@ export default function Scene({
           seed={seed}
           shape={boardShape}
         />
-        <RigidBody colliders="cuboid" position={[12.5, 60, 40]} type="fixed">
-          <mesh>
-            <boxGeometry args={[5, 120, boardWidth]} />
-            <meshPhysicalMaterial color={0xa0d2e9} opacity={0.4} transparent />
-          </mesh>
-        </RigidBody>
+        <GlassModel />
         {pointBins.map((bin, i) => (
-          <RigidBody
-            colliders="cuboid"
+          <PointBinModel
+            bin={bin}
+            index={i}
             key={i}
-            onCollisionEnter={handleScoreCollision(i)}
-            position={[5, 0, bin.center]}
-            type="fixed"
-          >
-            <mesh receiveShadow>
-              <boxGeometry args={[5, 10, bin.width]} />
-              <meshPhysicalMaterial color={bin.color} />
-            </mesh>
-          </RigidBody>
+            onCollision={binHandlers[i]}
+          />
         ))}
       </Center>
-      {/*
-        ccd sweeps the ball's path so it can never pass through the backboard or
-        a scoring bin between steps. softCcdPrediction is the cheaper companion -
-        it grows the ball's contact prediction along its motion, which is what
-        keeps glancing nail hits from being skipped.
-      */}
-      <RigidBody
-        ccd
-        colliders={false}
-        position={[-5, 100, 0]}
-        ref={ballRef}
-        softCcdPrediction={ballRadius}
-        type="dynamic"
-      >
-        <mesh castShadow receiveShadow ref={ballObjRef}>
-          <sphereGeometry args={[ballRadius, 64, 64]} />
-          <meshPhysicalMaterial {...ballMat} />
-          <Outlines color={0x262323} thickness={2} />
-        </mesh>
-        <BallCollider args={[ballRadius]} friction={0.4} />
-      </RigidBody>
+      <BallModel bodyRef={ballRef} meshRef={ballObjRef} />
     </Physics>
   );
 }
