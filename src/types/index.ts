@@ -10,6 +10,14 @@ export type PointBin = {
   score: number;
 };
 
+// a one-shot scoring impact effect - `id` increments per hit so ScoreBurst can
+// tell a fresh burst from the one it is already animating
+export type ScoreBurst = {
+  id: number;
+  position: [number, number, number];
+  color: number;
+};
+
 export enum SanwaButtonVariant {
   Primary = '',
   Error = 'red',

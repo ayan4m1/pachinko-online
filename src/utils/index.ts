@@ -12,7 +12,8 @@ import {
   RGBAFormat,
   Vector3
 } from 'three';
-import { hsl, rgb, RGBColor } from 'd3-color';
+import { rgb, RGBColor } from 'd3-color';
+import { interpolateHsl } from 'd3-interpolate';
 
 /* eslint-disable-next-line import-x/no-named-as-default-member */
 const { primitives, transforms, booleans } = modeling;
@@ -297,7 +298,9 @@ const ballDiameterMeters = 0.011;
 export const unitsPerMeter = (ballRadius * 2) / ballDiameterMeters; // ~272.7
 
 const rgbToHexColor = (color: RGBColor) =>
-  (color.r << 16) | (color.g << 8) | color.b;
+  (Math.round(color.r) << 16) |
+  (Math.round(color.g) << 8) |
+  Math.round(color.b);
 
 const minScore = 50;
 const maxScore = 1500;
@@ -305,6 +308,23 @@ const scoreStep = 50;
 const scoreMinWidth = 10;
 const scoreMaxWidth = 60;
 const scoreJitter = 0.2;
+
+// bin color reads as a value scale: wide/cheap bins are green, narrow/rich gold
+const lowScoreColor = '#a4a58f';
+const highScoreColor = '#35e469';
+const scoreColorScale = interpolateHsl(lowScoreColor, highScoreColor);
+
+const scoreToColor = (score: number) => {
+  // normalize against the fixed score bounds rather than this board's own range
+  // so a given color means the same thing on every board - widthToScore jitters
+  // by +/-20% and can land outside them, hence the clamp
+  const t = Math.min(
+    1,
+    Math.max(0, (score - minScore) / (maxScore - minScore))
+  );
+
+  return rgbToHexColor(rgb(scoreColorScale(t)));
+};
 
 // narrow bins pay the most: 1500 at width 10 falling linearly to 50 at width 60
 const widthToScore = (width: number) => {
@@ -325,15 +345,6 @@ export const createPointBins = () => {
   let remainingWidth = 80;
   let yOffset = 0;
   for (let i = 0; i < points; i++) {
-    const color = rgbToHexColor(
-      rgb(
-        hsl(
-          Math.random() * 360,
-          0.5 + Math.random() * 0.5,
-          0.4 + Math.random() * 0.6
-        )
-      )
-    );
     const minWidth = 10;
     const maxWidth = remainingWidth - minWidth * (points - i - 1);
     const width =
@@ -345,7 +356,7 @@ export const createPointBins = () => {
 
     const entry: PointBin = {
       center,
-      color,
+      color: scoreToColor(score),
       score,
       width
     };

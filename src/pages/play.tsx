@@ -1,6 +1,6 @@
 import { Form } from 'react-bootstrap';
 import { Canvas } from '@react-three/fiber';
-import { ChangeEvent, useCallback, useState } from 'react';
+import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 
 import Scene from '../components/Scene';
 import useDebounce from '../hooks/useDebounce';
@@ -8,6 +8,7 @@ import SanwaButton from '../components/SanwaButton';
 import { SanwaButtonVariant } from '../types';
 
 export const Component = () => {
+  const [adminMode, setAdminMode] = useState(false);
   const [coins, setCoins] = useState(5);
   const [score, setScore] = useState(0);
   const [needsReset, setNeedsReset] = useState(false);
@@ -35,12 +36,31 @@ export const Component = () => {
     : SanwaButtonVariant.Success;
   const buttonText = (playing ? 'Pause' : 'Play') as string;
 
+  useEffect(() => {
+    const rootNode = document.querySelector('html');
+
+    if (!rootNode) {
+      return;
+    }
+
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'F1') {
+        setAdminMode((val) => !val);
+      }
+    };
+
+    rootNode.addEventListener('keydown', handler);
+
+    return () => rootNode.removeEventListener('keydown', handler);
+  }, []);
+
   return (
     <div style={{ height: '100%' }}>
       <title>Play Online Pachinko</title>
       <Canvas shadows>
         <Scene
           addToScore={handleScoreAdd}
+          adminMode={adminMode}
           clearReset={handleResetClear}
           coins={coins}
           needsReset={needsReset}
@@ -62,16 +82,18 @@ export const Component = () => {
         </Form.Group>
         <Form.Group>
           <Form.Label>Physics State</Form.Label>
-          <SanwaButton
-            label={buttonText}
-            onClick={handlePlayPauseClick}
-            variant={buttonVariant}
-          />
-          <SanwaButton
-            label="Reset"
-            onClick={handleResetClick}
-            variant={SanwaButtonVariant.Warning}
-          />
+          <div>
+            <SanwaButton
+              label={buttonText}
+              onClick={handlePlayPauseClick}
+              variant={buttonVariant}
+            />
+            <SanwaButton
+              label="Reset"
+              onClick={handleResetClick}
+              variant={SanwaButtonVariant.Warning}
+            />
+          </div>
         </Form.Group>
       </Form>
     </div>

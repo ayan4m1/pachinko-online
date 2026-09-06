@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MeshToonMaterial, Object3D } from 'three';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { Physics, RapierRigidBody } from '@react-three/rapier';
 import { Center, OrbitControls, OrthographicCamera } from '@react-three/drei';
 
@@ -8,7 +8,9 @@ import BallModel from './BallModel';
 import CadModel from './CadModel';
 import GlassModel from './GlassModel';
 import PointBinModel from './PointBinModel';
+import ScoreBurst from './ScoreBurst';
 import StaticText from './StaticText';
+import { ScoreBurst as ScoreBurstData } from '../types';
 import {
   ballRadius,
   boardShape,
@@ -17,42 +19,17 @@ import {
   unitsPerMeter
 } from '../utils';
 
-// time is unscaled - rapier steps in real seconds - so acceleration converts by
-// the length scale alone
+const timeScale = 1 / 4.5; // slowdown factor
 const earthGravity = 9.6 * unitsPerMeter; // ~2618 units/s^2
-
-/*
-  earthGravity is a reference value, not a setting: at true scale the ball
-  crosses the 120-unit playfield in 0.30s of free fall, and no solver setting
-  changes that. A real machine only looks slow because the ball bleeds its
-  energy into ~100 nail impacts on the way down, which we cannot reproduce -
-  at ~790 units/s a 0.4-unit nail barely deflects it, so it just drops. So the
-  board runs in deliberate slow motion. Halving timeScale quarters gravity,
-  since t' = t / k means g' = g / k^2.
-*/
-const timeScale = 1 / 4.5;
 const gravity = earthGravity * timeScale * timeScale; // ~129 units/s^2
 
-/*
-  Rapier scales its tolerances by lengthUnit - the real speculative-contact
-  margin is normalizedPredictionDistance (0.002) * lengthUnit, so this has to
-  stay units-per-meter. Sizing it to the ball instead makes nail contacts
-  crisper on paper but collapses that margin to 0.006 units, which is nothing
-  against a ball moving 1.5 units per step, and the ball starts escaping.
-*/
-const lengthUnit = unitsPerMeter;
-
-/*
-  At ~176 units/s the ball covers 0.49 ball diameters per 1/120s step, so every
-  collider gets sampled at least twice on the way past. CCD on the ball covers
-  the rest; maxCcdSubsteps defaults to 1, which leaves that sweep little to work
-  with.
-*/
-const timeStep = 1 / 120;
-const maxCcdSubsteps = 8;
+// the front view - the board faces +X, so we look back down that axis
+const cameraPosition: [number, number, number] = [100, 0, 0];
+const cameraZoom = 5;
 
 interface IProps {
   addToScore: (toAdd: number) => void;
+  adminMode: boolean;
   clearReset: () => void;
   coins: number;
   needsReset?: boolean;
@@ -64,6 +41,7 @@ interface IProps {
 
 export default function Scene({
   addToScore,
+  adminMode,
   clearReset,
   coins,
   needsReset = false,
@@ -75,16 +53,40 @@ export default function Scene({
   // todo: prevent this from running multiple times on mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const pointBins = useMemo(() => createPointBins(), [seed]);
+  const camera = useThree((state) => state.camera);
   const ballObjRef = useRef<Object3D | null>(null);
   const ballRef = useRef<RapierRigidBody | null>(null);
   const inited = useRef(false);
+  const burstId = useRef(0);
+  const scored = useRef(false);
+  const [burst, setBurst] = useState<ScoreBurstData | null>(null);
   const handleScoreCollision = useCallback(
     (index: number) => () => {
-      if (coins === 0) {
+      /*
+        collisionEnter fires per contact pair, and the ball keeps bouncing
+        around the bin until the reset lands a frame or more later - without
+        this latch a single drop scores several times over. It is cleared once
+        the ball has actually been teleported back to the spawn point.
+      */
+      if (coins === 0 || scored.current) {
         return;
       }
 
+      scored.current = true;
+
       const pointBin = pointBins[index];
+      // the ball is teleported back to the spawn point on the next frame, so
+      // grab where it was while it is still sitting in the bin
+      const contact = ballRef.current?.translation();
+
+      if (contact) {
+        burstId.current++;
+        setBurst({
+          color: pointBin.color,
+          id: burstId.current,
+          position: [contact.x, contact.y, contact.z]
+        });
+      }
 
       addToScore(pointBin.score);
       triggerReset();
@@ -106,6 +108,23 @@ export default function Scene({
     [toonGradient]
   );
 
+  /*
+    OrbitControls leaves the camera wherever the user parked it, so put it back
+    on the front view when admin mode ends. It drives zoom rather than distance
+    on an orthographic camera, so that has to be restored too.
+  */
+  useEffect(() => {
+    if (adminMode) {
+      return;
+    }
+
+    camera.position.set(...cameraPosition);
+    // eslint-disable-next-line react-hooks/immutability
+    camera.zoom = cameraZoom;
+    camera.lookAt(0, 0, 0);
+    camera.updateProjectionMatrix();
+  }, [adminMode, camera]);
+
   useFrame(() => {
     if (
       ballObjRef.current?.parent &&
@@ -114,6 +133,7 @@ export default function Scene({
       coins > 0
     ) {
       ballRef.current.setTranslation({ x: -5, y: 100, z: 0 }, true);
+      scored.current = false;
       clearReset?.();
     }
 
@@ -151,13 +171,24 @@ export default function Scene({
   return (
     <Physics
       gravity={[0, -gravity, 0]}
-      lengthUnit={lengthUnit}
-      maxCcdSubsteps={maxCcdSubsteps}
+      lengthUnit={unitsPerMeter}
+      maxCcdSubsteps={8}
       paused={paused}
-      timeStep={timeStep}
+      timeStep={1 / 120}
     >
-      <OrthographicCamera makeDefault position={[100, 0, 0]} zoom={5} />
-      <OrbitControls />
+      {/*
+        OrbitControls used to aim this for us - it calls lookAt(target) on
+        mount, and its default target is the origin. With it gated behind
+        adminMode the camera keeps its default -Z orientation and sees the
+        board edge-on, so point it at the origin ourselves.
+      */}
+      <OrthographicCamera
+        makeDefault
+        onUpdate={(self) => self.lookAt(0, 0, 0)}
+        position={cameraPosition}
+        zoom={cameraZoom}
+      />
+      {adminMode && <OrbitControls />}
       <ambientLight color="aliceblue" />
       {/*
         The default directional shadow camera is a 10x10 ortho frustum, which
@@ -210,6 +241,11 @@ export default function Scene({
         ))}
       </Center>
       <BallModel bodyRef={ballRef} meshRef={ballObjRef} />
+      {/*
+        Outside <Center> on purpose - the burst is positioned from the ball's
+        Rapier translation, which is already in world space.
+      */}
+      <ScoreBurst burst={burst} />
     </Physics>
   );
 }
