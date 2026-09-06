@@ -342,7 +342,7 @@ export const createPointBins = () => {
   const result: PointBin[] = [];
   const points = 3 + Math.round(Math.random() * 3);
 
-  let remainingWidth = 80;
+  let remainingWidth = backboardSize[1];
   let yOffset = 0;
   for (let i = 0; i < points; i++) {
     const minWidth = 10;
