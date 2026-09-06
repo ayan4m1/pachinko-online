@@ -13,7 +13,7 @@ export default function PointBinModel({ bin, index, onCollision }: IProps) {
       colliders="cuboid"
       key={index}
       onCollisionEnter={onCollision}
-      position={[5, 0, bin.center]}
+      position={[6, -2, bin.center]}
       type="fixed"
     >
       <mesh receiveShadow>
