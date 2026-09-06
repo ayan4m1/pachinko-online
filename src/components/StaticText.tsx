@@ -24,7 +24,7 @@ export default function StaticText({
         size={5}
       >
         Coins: {coins}/{maxCoins}
-        <meshStandardMaterial color="blue" />
+        <meshStandardMaterial color="red" />
       </Text3D>
       <Text3D
         font="/fonts/dm_mono.json"
