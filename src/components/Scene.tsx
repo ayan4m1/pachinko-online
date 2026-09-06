@@ -241,10 +241,6 @@ export default function Scene({
         ))}
       </Center>
       <BallModel bodyRef={ballRef} meshRef={ballObjRef} />
-      {/*
-        Outside <Center> on purpose - the burst is positioned from the ball's
-        Rapier translation, which is already in world space.
-      */}
       <ScoreBurst burst={burst} />
     </Physics>
   );
