@@ -19,7 +19,7 @@ import {
   unitsPerMeter
 } from '../utils';
 
-const timeScale = 1 / 4.5; // slowdown factor
+const timeScale = 1 / 4; // slowdown factor
 const earthGravity = 9.6 * unitsPerMeter; // ~2618 units/s^2
 const gravity = earthGravity * timeScale * timeScale; // ~129 units/s^2
 
